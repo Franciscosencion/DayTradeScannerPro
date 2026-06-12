@@ -1,0 +1,96 @@
+<Page x:Class="TradeScanner.UI.Views.Charts.ChartsView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
+      Title="Charts">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Symbol Bar -->
+        <Border Grid.Row="0" Background="{StaticResource SurfaceBrush}" Padding="16,10">
+            <StackPanel Orientation="Horizontal">
+                <TextBox Text="{Binding Symbol, UpdateSourceTrigger=PropertyChanged}"
+                         Width="100" Margin="0,0,8,0" Padding="8,6"
+                         Style="{StaticResource InputStyle}"
+                         Tag="Symbol">
+                    <TextBox.InputBindings>
+                        <KeyBinding Key="Return" Command="{Binding LoadChartCommand}"/>
+                    </TextBox.InputBindings>
+                </TextBox>
+                <Button Content="Load Chart"
+                        Command="{Binding LoadChartCommand}"
+                        Style="{StaticResource PrimaryButtonStyle}"
+                        Margin="0,0,24,0"/>
+
+                <!-- Stats -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding LastPrice}" FontSize="20" FontWeight="Bold"
+                               Foreground="{StaticResource AccentBrush}" Margin="0,0,12,0"/>
+                    <TextBlock Text="{Binding ChangeText}" FontSize="14"
+                               Foreground="{Binding IsPositive, Converter={StaticResource BoolToGreenRedConverter}}"
+                               VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <TextBlock Text="Vol: " Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding VolumeText}" Foreground="{StaticResource TextBrush}"
+                               VerticalAlignment="Center" Margin="4,0,16,0"/>
+                    <TextBlock Text="Range: " Foreground="{StaticResource MutedTextBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding DayRange}" Foreground="{StaticResource TextBrush}"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- Interval selector (visual only — intervals driven by Load) -->
+        <Border Grid.Row="1" Background="{StaticResource HeaderBrush}" Padding="12,6">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="5-min intraday  ·  last 100 bars"
+                           Foreground="{StaticResource MutedTextBrush}" FontSize="11"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Candlestick Chart -->
+        <Border Grid.Row="2" Background="{StaticResource BackgroundBrush}" Margin="0">
+            <Grid>
+                <lvc:CartesianChart
+                    Series="{Binding Series}"
+                    XAxes="{Binding XAxes}"
+                    YAxes="{Binding YAxes}"
+                    Background="Transparent"
+                    ZoomMode="X"/>
+                <TextBlock Text="No data — enter a symbol above and click Load Chart"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                           Foreground="{StaticResource MutedTextBrush}" FontSize="14">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <MultiDataTrigger>
+                                    <MultiDataTrigger.Conditions>
+                                        <Condition Binding="{Binding Series.Length}" Value="0"/>
+                                        <Condition Binding="{Binding IsBusy}" Value="False"/>
+                                    </MultiDataTrigger.Conditions>
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </MultiDataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+        </Border>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="3" Background="{StaticResource StatusBarBrush}" Padding="12,4">
+            <Grid>
+                <TextBlock Text="{Binding StatusMessage}" Foreground="{StaticResource MutedTextBrush}" HorizontalAlignment="Left"/>
+                <ProgressBar IsIndeterminate="True" Height="4" Width="120"
+                             HorizontalAlignment="Right"
+                             Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibilityConverter}}"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Page>

@@ -1,0 +1,83 @@
+<Page x:Class="TradeScanner.UI.Views.Providers.ProvidersView"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      Title="Data Providers">
+
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="Configure API Keys" Style="{StaticResource SectionHeaderStyle}" Margin="0,0,0,4"/>
+        <TextBlock Grid.Row="1" Text="Keys are stored encrypted (DPAPI). The field clears after saving — a key icon indicates a saved key."
+                   Foreground="{StaticResource MutedTextBrush}" FontSize="11" Margin="0,0,0,16"/>
+
+        <ItemsControl Grid.Row="2" ItemsSource="{Binding Providers}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border Background="{StaticResource SurfaceBrush}" CornerRadius="8" Margin="0,0,0,10" Padding="16,12">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="200"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="100"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Provider info -->
+                            <StackPanel Grid.Column="0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding DisplayName}" FontWeight="Bold"
+                                               Foreground="{StaticResource TextBrush}"/>
+                                    <!-- Key saved indicator -->
+                                    <TextBlock Text=" 🔑" FontSize="11" VerticalAlignment="Center"
+                                               Visibility="{Binding HasSavedKey, Converter={StaticResource BoolToVisibilityConverter}}"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding ProviderType}" Foreground="{StaticResource MutedTextBrush}" FontSize="11"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                    <Ellipse Width="8" Height="8" Margin="0,0,4,0"
+                                             Fill="{Binding IsAvailable, Converter={StaticResource BoolToGreenRedConverter}}"/>
+                                    <TextBlock Text="{Binding IsAvailable, Converter={StaticResource BoolToAvailableConverter}}"
+                                               FontSize="11" Foreground="{StaticResource MutedTextBrush}"/>
+                                </StackPanel>
+                            </StackPanel>
+
+                            <!-- API key input -->
+                            <TextBox Grid.Column="1" Margin="0,0,8,0"
+                                     Text="{Binding ApiKey, UpdateSourceTrigger=PropertyChanged}"
+                                     Tag="Paste API key here, then Save or Validate"
+                                     Style="{StaticResource InputStyle}"/>
+
+                            <!-- Save -->
+                            <Button Grid.Column="2" Content="Save" Margin="0,0,6,0"
+                                    Command="{Binding DataContext.SaveApiKeyCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                    CommandParameter="{Binding}"
+                                    Style="{StaticResource PrimaryButtonStyle}"/>
+
+                            <!-- Validate -->
+                            <Button Grid.Column="3" Content="Validate" Margin="0,0,6,0"
+                                    Command="{Binding DataContext.ValidateProviderCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                    CommandParameter="{Binding}"
+                                    Style="{StaticResource SecondaryButtonStyle}"/>
+
+                            <!-- Clear -->
+                            <Button Grid.Column="4" Content="Clear" Margin="0,0,8,0"
+                                    Command="{Binding DataContext.ClearApiKeyCommand, RelativeSource={RelativeSource AncestorType=Page}}"
+                                    CommandParameter="{Binding}"
+                                    Style="{StaticResource SecondaryButtonStyle}"/>
+
+                            <!-- Status -->
+                            <TextBlock Grid.Column="5" Text="{Binding ValidationStatus}"
+                                       VerticalAlignment="Center"
+                                       Foreground="{Binding ValidationStatus, Converter={StaticResource ValidationToColorConverter}}"/>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </Grid>
+</Page>

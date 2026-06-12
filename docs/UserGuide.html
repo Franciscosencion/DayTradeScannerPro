@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Day Trade Scanner Pro — User Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #ffffff;
+    --surface: #f8f9fa;
+    --border: #e1e4e8;
+    --accent: #009688;
+    --accent-dark: #00796b;
+    --text: #1a1a2e;
+    --muted: #6b7280;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --success: #10b981;
+    --code-bg: #f6f8fa;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    color: var(--text);
+    background: var(--bg);
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 48px 32px;
+  }
+
+  /* Cover page */
+  .cover {
+    text-align: center;
+    padding: 80px 0 100px;
+    border-bottom: 3px solid var(--accent);
+    margin-bottom: 60px;
+    page-break-after: always;
+  }
+  .cover .logo-block {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    font-size: 48px;
+    width: 90px; height: 90px;
+    line-height: 90px;
+    border-radius: 20px;
+    margin-bottom: 28px;
+  }
+  .cover h1 {
+    font-size: 42px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -1px;
+    line-height: 1.1;
+  }
+  .cover .subtitle {
+    font-size: 18px;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+  .cover .version-badge {
+    display: inline-block;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 18px;
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 24px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .cover .meta {
+    margin-top: 40px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .cover .meta strong { color: var(--text); }
+
+  /* TOC */
+  .toc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-bottom: 56px;
+    page-break-after: always;
+  }
+  .toc h2 {
+    font-size: 16px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .toc ol {
+    list-style: none;
+    counter-reset: toc-counter;
+  }
+  .toc > ol > li {
+    counter-increment: toc-counter;
+    margin-bottom: 8px;
+  }
+  .toc > ol > li::before {
+    content: counter(toc-counter) ".";
+    font-weight: 600;
+    color: var(--accent);
+    margin-right: 10px;
+    font-variant-numeric: tabular-nums;
+    display: inline-block;
+    width: 20px;
+  }
+  .toc a {
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .toc a:hover { color: var(--accent); }
+  .toc .sub {
+    margin-top: 4px;
+    margin-left: 30px;
+  }
+  .toc .sub li {
+    margin-bottom: 2px;
+  }
+  .toc .sub a {
+    font-weight: 400;
+    color: var(--muted);
+    font-size: 13px;
+  }
+
+  /* Sections */
+  section {
+    margin-bottom: 56px;
+  }
+  section + section {
+    border-top: 1px solid var(--border);
+    padding-top: 48px;
+  }
+
+  h1 { font-size: 30px; font-weight: 700; margin-bottom: 8px; }
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 20px;
+    margin-top: 40px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h2:first-child { margin-top: 0; }
+  h2 .section-num {
+    background: var(--accent);
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 12px;
+    margin-top: 28px;
+  }
+
+  p { margin-bottom: 14px; }
+  p:last-child { margin-bottom: 0; }
+
+  ul, ol {
+    margin: 12px 0 16px 24px;
+  }
+  li { margin-bottom: 6px; }
+
+  /* Callouts */
+  .callout {
+    border-left: 4px solid;
+    border-radius: 0 8px 8px 0;
+    padding: 14px 18px;
+    margin: 20px 0;
+    font-size: 13.5px;
+  }
+  .callout.info { border-color: var(--accent); background: #e0f2f1; }
+  .callout.warning { border-color: var(--warning); background: #fffbeb; }
+  .callout.danger { border-color: var(--danger); background: #fef2f2; }
+  .callout strong { display: block; margin-bottom: 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .callout.info strong { color: var(--accent-dark); }
+  .callout.warning strong { color: #92400e; }
+  .callout.danger strong { color: #991b1b; }
+
+  /* Code */
+  code {
+    font-family: 'JetBrains Mono', 'Courier New', monospace;
+    font-size: 12.5px;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+  }
+  pre {
+    background: #1e1e2e;
+    border-radius: 8px;
+    padding: 20px 24px;
+    overflow-x: auto;
+    margin: 16px 0;
+    border: 1px solid #2d2d3f;
+  }
+  pre code {
+    background: none;
+    border: none;
+    padding: 0;
+    color: #cdd6f4;
+    font-size: 13px;
+    line-height: 1.6;
+  }
+  .ps-prompt { color: #89b4fa; }
+  .ps-cmd { color: #cba6f7; }
+  .ps-str { color: #a6e3a1; }
+  .ps-comment { color: #6c7086; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 13.5px;
+  }
+  th {
+    background: var(--text);
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  th:first-child { border-radius: 8px 0 0 0; }
+  th:last-child { border-radius: 0 8px 0 0; }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  tr:nth-child(even) td { background: var(--surface); }
+  tr:last-child td { border-bottom: none; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .badge.green { background: #d1fae5; color: #065f46; }
+  .badge.blue { background: #dbeafe; color: #1e40af; }
+  .badge.amber { background: #fef3c7; color: #92400e; }
+  .badge.red { background: #fee2e2; color: #991b1b; }
+  .badge.teal { background: #ccfbf1; color: #134e4a; }
+
+  /* Step list */
+  .steps {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: step-counter;
+  }
+  .steps li {
+    counter-increment: step-counter;
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    align-items: flex-start;
+  }
+  .steps li::before {
+    content: counter(step-counter);
+    background: var(--accent);
+    color: white;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .steps li > div { flex: 1; }
+  .steps li strong { display: block; font-size: 14px; margin-bottom: 4px; }
+  .steps li p { margin: 0; color: var(--muted); font-size: 13px; }
+
+  /* Feature grid */
+  .feature-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .feature-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .feature-card .icon { font-size: 22px; margin-bottom: 8px; }
+  .feature-card h4 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .feature-card p { font-size: 12.5px; color: var(--muted); margin: 0; }
+
+  /* Score bar */
+  .score-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+  .score-label { width: 120px; font-size: 13px; font-weight: 500; flex-shrink: 0; }
+  .score-bar-bg {
+    flex: 1;
+    background: var(--border);
+    border-radius: 4px;
+    height: 8px;
+  }
+  .score-bar-fill {
+    background: var(--accent);
+    border-radius: 4px;
+    height: 8px;
+  }
+  .score-pct { width: 40px; font-size: 12px; color: var(--muted); text-align: right; }
+
+  /* Page break for print */
+  @media print {
+    .cover, .toc, section { page-break-inside: avoid; }
+    h2 { page-break-after: avoid; }
+    pre { page-break-inside: avoid; }
+    body { padding: 0; }
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 80px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ COVER ═══════════════════════════ -->
+<div class="cover">
+  <div class="logo-block">📈</div>
+  <h1>Day Trade Scanner Pro</h1>
+  <div class="subtitle">User Guide &amp; Reference Manual</div>
+  <div class="version-badge">Version 1.0 · June 2026</div>
+  <div class="meta">
+    <strong>Platform:</strong> Windows 10 / 11 &nbsp;·&nbsp;
+    <strong>Runtime:</strong> .NET 10 (self-contained) &nbsp;·&nbsp;
+    <strong>Architecture:</strong> x64
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ TOC ════════════════════════════ -->
+<div class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#overview">Overview</a>
+      <ul class="sub"><li><a href="#what">What It Does</a></li><li><a href="#features">Feature Summary</a></li></ul>
+    </li>
+    <li><a href="#install">Installation</a>
+      <ul class="sub"><li><a href="#requirements">System Requirements</a></li><li><a href="#msix">Installing the MSIX Package</a></li><li><a href="#uninstall">Uninstalling</a></li></ul>
+    </li>
+    <li><a href="#quickstart">Quick Start</a></li>
+    <li><a href="#providers">Configuring Data Providers</a>
+      <ul class="sub"><li><a href="#provider-table">Provider Reference</a></li><li><a href="#api-key">Adding an API Key</a></li><li><a href="#failover">Failover Chain</a></li></ul>
+    </li>
+    <li><a href="#dashboard">Dashboard</a>
+      <ul class="sub"><li><a href="#scan">Running a Scan</a></li><li><a href="#trade-score">Understanding the Trade Score</a></li><li><a href="#streaming">Real-Time Streaming</a></li><li><a href="#export">Exporting Results</a></li></ul>
+    </li>
+    <li><a href="#alerts">Alerts</a>
+      <ul class="sub"><li><a href="#alert-types">Alert Types</a></li><li><a href="#create-alert">Creating an Alert</a></li><li><a href="#notifications">Notifications</a></li></ul>
+    </li>
+    <li><a href="#charts">Charts</a></li>
+    <li><a href="#watchlist">Watchlist</a></li>
+    <li><a href="#settings">Settings</a>
+      <ul class="sub"><li><a href="#scan-settings">Scanner Settings</a></li><li><a href="#filters">Filter Criteria</a></li><li><a href="#weights">Score Weights</a></li></ul>
+    </li>
+    <li><a href="#security">Security &amp; Privacy</a></li>
+    <li><a href="#troubleshooting">Troubleshooting</a></li>
+    <li><a href="#tech">Technical Reference</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════════════════════════════════════ 1. OVERVIEW ════════════════════ -->
+<section id="overview">
+  <h2><span class="section-num">1</span> Overview</h2>
+
+  <h3 id="what">What It Does</h3>
+  <p>Day Trade Scanner Pro monitors the US equity market in real time, scores every symbol by a composite <strong>Trade Score</strong>, and surfaces the highest-probability trade candidates on your screen before the move is over. It replaces the manual process of scanning dozens of charts every morning.</p>
+  <p>The app connects to up to seven market-data providers simultaneously. If one fails or rate-limits, it automatically fails over to the next. Premium providers (Polygon.io, Finnhub) unlock live WebSocket price streaming; free providers (Yahoo Finance, Stooq) work with no configuration at all.</p>
+
+  <h3 id="features">Feature Summary</h3>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <div class="icon">🔍</div>
+      <h4>Automated Scanning</h4>
+      <p>Continuous or one-shot scans with configurable frequency (1 min → 1 hour). Results ranked by Trade Score, highest first.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📊</div>
+      <h4>Trade Score 0–100</h4>
+      <p>Composite score combining Momentum, Volume, Technical indicators, and News sentiment. Weights are fully adjustable.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">⚡</div>
+      <h4>Live WebSocket Streaming</h4>
+      <p>Real-time trade ticks from Polygon.io and Finnhub. Prices update in the results table without re-scanning. Auto-reconnects on drops.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🔔</div>
+      <h4>Alerts &amp; Notifications</h4>
+      <p>Price above/below, percent change, and volume spike alerts with sound and popup notifications.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">📈</div>
+      <h4>Candlestick Charts</h4>
+      <p>Interactive OHLCV charts for any scanned symbol using LiveCharts2. Multiple timeframes supported.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">💾</div>
+      <h4>Export</h4>
+      <p>One-click export to formatted <code>.xlsx</code> (color-coded scores, auto-filter) or plain <code>.csv</code>.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">👁</div>
+      <h4>Watchlist</h4>
+      <p>Maintain a persistent list of symbols to monitor. Watchlist symbols are included in every scan run.</p>
+    </div>
+    <div class="feature-card">
+      <div class="icon">🔐</div>
+      <h4>Encrypted Key Storage</h4>
+      <p>API keys stored with Windows DPAPI — encrypted at rest, bound to your Windows account. Never stored in plaintext.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ 2. INSTALL ═════════════════════ -->
+<section id="install">
+  <h2><span class="section-num">2</span> Installation</h2>
+
+  <h3 id="requirements">System Requirements</h3>
+  <table>
+    <tr><th>Component</th><th>Minimum</th><th>Recommended</th></tr>
+    <tr><td>Operating System</td><td>Windows 10 (build 1809)</td><td>Windows 11</td></tr>
+    <tr><td>Architecture</td><td>x64</td><td>x64</td></tr>
+    <tr><td>RAM</td><td>4 GB</td><td>8 GB+</td></tr>
+    <tr><td>Disk</td><td>200 MB free</td><td>500 MB (for scan history)</td></tr>
+    <tr><td>Internet</td><td>Required (market data)</td><td>Broadband</td></tr>
+    <tr><td>.NET Runtime</td><td colspan="2">Bundled — no pre-install required</td></tr>
+  </table>
+
+  <h3 id="msix">Installing the MSIX Package</h3>
+  <ol class="steps">
+    <li>
+      <div>
+        <strong>Download the installer</strong>
+        <p>Download <code>TradeScanner_1.0.0.0.msix</code> from the GitHub Releases page.</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Install the signing certificate (sideload only)</strong>
+        <p>If this is a self-signed build, install the certificate first. Open PowerShell as Administrator:</p>
+        <pre><code><span class="ps-cmd">Import-Certificate</span> <span class="ps-str">-FilePath</span> TradeScanner-test.pfx <span class="ps-str">-CertStoreLocation</span> Cert:\LocalMachine\TrustedPeople</code></pre>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Enable Developer Mode or sideloading</strong>
+        <p>Go to <strong>Settings → System → For developers</strong> and enable <em>Sideload apps</em> (Windows 10) or <em>Developer Mode</em> (Windows 11).</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Run the installer</strong>
+        <p>Double-click <code>TradeScanner_1.0.0.0.msix</code>. Click <strong>Install</strong> in the App Installer dialog.</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Launch the app</strong>
+        <p>Find <strong>Day Trade Scanner Pro</strong> in the Start menu. On first launch the database is created automatically.</p>
+      </div>
+    </li>
+  </ol>
+
+  <div class="callout info">
+    <strong>Note</strong>
+    The app stores its database at <code>%LOCALAPPDATA%\TradeScanner\tradescanner.db</code>. This file is created on first run and persists scan history, watchlists, alerts, and encrypted API keys.
+  </div>
+
+  <h3 id="uninstall">Uninstalling</h3>
+  <p>Go to <strong>Settings → Apps → Installed apps</strong>, find <em>Day Trade Scanner Pro</em>, and click <strong>Uninstall</strong>. User data (database file) at <code>%LOCALAPPDATA%\TradeScanner\</code> is not removed automatically — delete that folder to fully clean up.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ 3. QUICK START ═════════════════ -->
+<section id="quickstart">
+  <h2><span class="section-num">3</span> Quick Start</h2>
+  <p>The fastest path to your first scan — no API key required (uses Yahoo Finance and Stooq).</p>
+  <ol class="steps">
+    <li>
+      <div>
+        <strong>Launch Day Trade Scanner Pro</strong>
+        <p>The Dashboard opens by default. The status bar shows "Ready".</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Click "Scan Once"</strong>
+        <p>A single scan runs immediately against Yahoo Finance (always available, no key). Results appear in the table within 30–60 seconds depending on symbol list size.</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Review results</strong>
+        <p>Results are sorted by Trade Score (highest first). Each row shows symbol, score, price, change %, volume, and volume ratio.</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Click a symbol to open its chart</strong>
+        <p>Navigate to the <strong>Charts</strong> tab. The selected symbol's candlestick chart loads automatically.</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Add an API key for better data (optional)</strong>
+        <p>Go to <strong>Providers</strong>, paste your Polygon.io or Finnhub key, click <strong>Save</strong>. The provider becomes active immediately — no restart needed.</p>
+      </div>
+    </li>
+    <li>
+      <div>
+        <strong>Start continuous scanning</strong>
+        <p>Click the green <strong>Start Scan</strong> button. The scanner runs on the interval configured in Settings (default: 5 minutes).</p>
+      </div>
+    </li>
+  </ol>
+</section>
+
+<!-- ═══════════════════════════════════════════ 4. PROVIDERS ══════════════════ -->
+<section id="providers">
+  <h2><span class="section-num">4</span> Configuring Data Providers</h2>
+
+  <h3 id="provider-table">Provider Reference</h3>
+  <table>
+    <tr><th>Provider</th><th>Tier</th><th>Key Required</th><th>WebSocket Streaming</th><th>Data Frequency</th></tr>
+    <tr>
+      <td><strong>Polygon.io</strong></td>
+      <td><span class="badge amber">Premium</span></td>
+      <td>Yes</td>
+      <td><span class="badge green">Yes</span></td>
+      <td>Real-time + historical</td>
+    </tr>
+    <tr>
+      <td><strong>Finnhub</strong></td>
+      <td><span class="badge amber">Premium</span></td>
+      <td>Yes</td>
+      <td><span class="badge green">Yes</span></td>
+      <td>Real-time + historical</td>
+    </tr>
+    <tr>
+      <td><strong>Financial Modeling Prep</strong></td>
+      <td><span class="badge blue">Freemium</span></td>
+      <td>Yes</td>
+      <td><span class="badge red">No</span></td>
+      <td>Quote + historical</td>
+    </tr>
+    <tr>
+      <td><strong>TwelveData</strong></td>
+      <td><span class="badge blue">Freemium</span></td>
+      <td>Yes</td>
+      <td><span class="badge red">No</span></td>
+      <td>Quote + historical</td>
+    </tr>
+    <tr>
+      <td><strong>AlphaVantage</strong></td>
+      <td><span class="badge blue">Freemium</span></td>
+      <td>Yes (free tier available)</td>
+      <td><span class="badge red">No</span></td>
+      <td>Quote + historical</td>
+    </tr>
+    <tr>
+      <td><strong>Stooq</strong></td>
+      <td><span class="badge teal">Free</span></td>
+      <td>No</td>
+      <td><span class="badge red">No</span></td>
+      <td>Daily bars only</td>
+    </tr>
+    <tr>
+      <td><strong>Yahoo Finance</strong></td>
+      <td><span class="badge teal">Free</span></td>
+      <td>No</td>
+      <td><span class="badge red">No</span></td>
+      <td>Quote + historical</td>
+    </tr>
+  </table>
+
+  <div class="callout info">
+    <strong>Recommendation</strong>
+    For the best experience, add a free Finnhub key (finnhub.io — free tier available) or a Polygon.io Starter key. Both unlock real-time WebSocket streaming that keeps prices updating between scans.
+  </div>
+
+  <h3 id="api-key">Adding an API Key</h3>
+  <ol class="steps">
+    <li><div><strong>Navigate to Providers</strong><p>Click <strong>Providers</strong> in the left sidebar.</p></div></li>
+    <li><div><strong>Locate your provider</strong><p>Each provider appears as a card. A green dot means it is currently active; grey means unavailable (no key or key invalid).</p></div></li>
+    <li><div><strong>Paste your key</strong><p>Click the text field labeled <em>"Paste API key here, then Save or Validate"</em> and paste your key.</p></div></li>
+    <li><div><strong>Click Save</strong><p>The key is encrypted with Windows DPAPI and stored in the local database. The field clears and a 🔑 icon appears — confirming the key is saved.</p></div></li>
+    <li><div><strong>Optionally click Validate</strong><p>Validates the key by making a live test request to the provider. Shows "Valid ✓" or an error message in the status column.</p></div></li>
+  </ol>
+  <p>To remove a key, click <strong>Clear</strong>. The provider reverts to unavailable until a new key is entered.</p>
+
+  <h3 id="failover">Failover Chain</h3>
+  <p>The app uses an automatic failover chain ordered by priority:</p>
+  <ol>
+    <li>Polygon.io (priority 1, fastest)</li>
+    <li>Finnhub (priority 2)</li>
+    <li>Financial Modeling Prep (priority 3)</li>
+    <li>TwelveData (priority 4)</li>
+    <li>AlphaVantage (priority 5)</li>
+    <li>Stooq (priority 6, daily only)</li>
+    <li>Yahoo Finance (priority 10, always available)</li>
+  </ol>
+  <p>If a provider returns an error or rate-limit response, the chain automatically retries with the next available provider. You do not need to configure this — it is automatic.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ 5. DASHBOARD ══════════════════ -->
+<section id="dashboard">
+  <h2><span class="section-num">5</span> Dashboard</h2>
+  <p>The Dashboard is the main workspace. It shows the scan results table and the scanning/streaming controls.</p>
+
+  <h3 id="scan">Running a Scan</h3>
+  <table>
+    <tr><th>Button</th><th>Action</th></tr>
+    <tr><td><strong>Start Scan</strong> (green)</td><td>Starts continuous scanning on the configured interval. Button label changes to <em>Stop Scan</em>. A spinner shows in the status bar while a scan is running.</td></tr>
+    <tr><td><strong>Scan Once</strong></td><td>Runs a single scan immediately and shows results. Does not start continuous scanning.</td></tr>
+    <tr><td><strong>Export CSV</strong></td><td>Opens a save dialog to export current results as <code>.xlsx</code> or <code>.csv</code>.</td></tr>
+  </table>
+
+  <p>The status bar (bottom of the toolbar) shows the current state: <em>Ready</em>, <em>Scanning…</em>, <em>Scan complete — N results</em>, or any error message from the provider chain.</p>
+
+  <h3 id="results-table">Results Table Columns</h3>
+  <table>
+    <tr><th>Column</th><th>Description</th></tr>
+    <tr><td><strong>Symbol</strong></td><td>Ticker symbol (e.g., AAPL)</td></tr>
+    <tr><td><strong>Score</strong></td><td>Trade Score 0–100. Higher is a stronger setup. Color-coded: teal ≥ 70, amber 40–69, red &lt; 40.</td></tr>
+    <tr><td><strong>Price</strong></td><td>Last trade price. Updates live when streaming is active.</td></tr>
+    <tr><td><strong>Change %</strong></td><td>Intraday change from previous close. Green = positive, red = negative.</td></tr>
+    <tr><td><strong>Volume</strong></td><td>Volume traded today.</td></tr>
+    <tr><td><strong>Vol Ratio</strong></td><td>Today's volume ÷ average daily volume. Values above 2× indicate unusual activity.</td></tr>
+    <tr><td><strong>Provider</strong></td><td>Which data provider supplied this result.</td></tr>
+    <tr><td><strong>Time</strong></td><td>Timestamp of when this symbol was last scanned.</td></tr>
+  </table>
+
+  <h3 id="trade-score">Understanding the Trade Score</h3>
+  <p>The Trade Score is a composite 0–100 rating. Four sub-scores are weighted and summed:</p>
+
+  <div class="score-row">
+    <div class="score-label">Momentum</div>
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:35%"></div></div>
+    <div class="score-pct">35%</div>
+  </div>
+  <div class="score-row">
+    <div class="score-label">Volume</div>
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:30%"></div></div>
+    <div class="score-pct">30%</div>
+  </div>
+  <div class="score-row">
+    <div class="score-label">Technical</div>
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:25%"></div></div>
+    <div class="score-pct">25%</div>
+  </div>
+  <div class="score-row">
+    <div class="score-label">News</div>
+    <div class="score-bar-bg"><div class="score-bar-fill" style="width:10%"></div></div>
+    <div class="score-pct">10%</div>
+  </div>
+
+  <br>
+  <table>
+    <tr><th>Sub-score</th><th>What drives it</th></tr>
+    <tr><td><strong>Momentum</strong></td><td>Intraday % change, direction, RSI position (sweet spot: 50–70)</td></tr>
+    <tr><td><strong>Volume</strong></td><td>Volume ratio vs. historical average (5× avg = 100 pts)</td></tr>
+    <tr><td><strong>Technical</strong></td><td>Breakout detection, Bollinger Band position, SMA trend, ATR range</td></tr>
+    <tr><td><strong>News</strong></td><td>Average sentiment of recent news headlines (neutral = 50)</td></tr>
+  </table>
+
+  <div class="callout info">
+    <strong>Tip</strong>
+    You can adjust the weights in Settings → Score Weights to match your personal trading style. For pure momentum traders, increase Momentum to 50% and reduce Technical. For swing traders, increase Technical and reduce Momentum.
+  </div>
+
+  <h3 id="streaming">Real-Time Streaming</h3>
+  <p>Streaming connects a WebSocket to Polygon.io or Finnhub and pushes live trade ticks directly into the results table — prices update without re-scanning.</p>
+
+  <ol class="steps">
+    <li><div><strong>Select a streaming provider</strong><p>Use the dropdown in the toolbar (Polygon or Finnhub). Requires a saved API key for the selected provider.</p></div></li>
+    <li><div><strong>Optional: enter API key inline</strong><p>If you haven't saved a key via the Providers page, paste it in the streaming key field. If the field is left blank, the app silently uses the saved key.</p></div></li>
+    <li><div><strong>Click Stream</strong><p>The button label changes to <em>Stop Stream</em>. A "Connected" status appears. Prices in the table begin updating in real time.</p></div></li>
+    <li><div><strong>Click Stop Stream to disconnect</strong><p>The connection closes gracefully. Prices revert to scan-time values.</p></div></li>
+  </ol>
+
+  <div class="callout warning">
+    <strong>Reconnection</strong>
+    If the WebSocket drops (network interruption, server restart), the app automatically reconnects with exponential backoff: 2s → 4s → 8s → 16s → 32s → 60s. The status bar shows "Connection lost — reconnecting in Xs (attempt N)…". No action is required.
+  </div>
+
+  <h3 id="export">Exporting Results</h3>
+  <p>Click <strong>Export CSV</strong> in the Dashboard toolbar. A Save dialog opens with two file type options:</p>
+  <ul>
+    <li><strong>Excel Workbook (.xlsx)</strong> — Formatted spreadsheet with bold headers, color-coded Trade Score column (teal ≥ 70, amber 40–69, red &lt; 40), color-coded Change % (teal = positive, red = negative), auto-filter on all columns, and auto-sized column widths.</li>
+    <li><strong>CSV File (.csv)</strong> — Plain comma-separated values, compatible with any spreadsheet application.</li>
+  </ul>
+</section>
+
+<!-- ═══════════════════════════════════════════ 6. ALERTS ═════════════════════ -->
+<section id="alerts">
+  <h2><span class="section-num">6</span> Alerts</h2>
+  <p>Alerts notify you when a specific condition is met for a symbol during a scan. All alerts are evaluated at the end of each scan run.</p>
+
+  <h3 id="alert-types">Alert Types</h3>
+  <table>
+    <tr><th>Alert Type</th><th>Triggers When</th><th>Threshold Meaning</th></tr>
+    <tr><td><strong>Price Above</strong></td><td>Last price &gt; threshold</td><td>Dollar value (e.g., 150.00)</td></tr>
+    <tr><td><strong>Price Below</strong></td><td>Last price &lt; threshold</td><td>Dollar value (e.g., 100.00)</td></tr>
+    <tr><td><strong>Percent Change Up</strong></td><td>Intraday change % &gt; threshold</td><td>Percent value (e.g., 5 = +5%)</td></tr>
+    <tr><td><strong>Percent Change Down</strong></td><td>Intraday change % &lt; −threshold</td><td>Percent value (e.g., 3 = −3%)</td></tr>
+    <tr><td><strong>Volume Above</strong></td><td>Current volume &gt; threshold</td><td>Share count (e.g., 1000000)</td></tr>
+  </table>
+
+  <h3 id="create-alert">Creating an Alert</h3>
+  <ol class="steps">
+    <li><div><strong>Navigate to Alerts</strong><p>Click <strong>Alerts</strong> in the left sidebar.</p></div></li>
+    <li><div><strong>Fill in the add-alert form</strong><p>Enter the ticker symbol (e.g., <code>AAPL</code>), choose an alert type from the dropdown, and enter the threshold value.</p></div></li>
+    <li><div><strong>Click Add Alert</strong><p>The alert appears in the list below, enabled by default.</p></div></li>
+    <li><div><strong>Manage existing alerts</strong><p>Use <strong>Toggle</strong> to temporarily enable/disable an alert without deleting it. Use <strong>Delete</strong> to remove it permanently.</p></div></li>
+  </ol>
+
+  <p>The alert list columns show: Symbol, Type, Threshold, Enabled status, how many times it has triggered (<em>Triggered</em>), and when it last fired (<em>Last At</em>).</p>
+
+  <h3 id="notifications">Notifications</h3>
+  <p>When an alert fires, the app:</p>
+  <ul>
+    <li>Plays a system sound (<em>Asterisk</em>) if <strong>Sound Alerts</strong> is enabled in Settings</li>
+    <li>Shows a popup notification if <strong>Popup Alerts</strong> is enabled in Settings</li>
+  </ul>
+  <p>Both notification types can be toggled independently in <strong>Settings → Notifications</strong>.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ 7. CHARTS ═════════════════════ -->
+<section id="charts">
+  <h2><span class="section-num">7</span> Charts</h2>
+  <p>The Charts page displays a candlestick chart for a selected symbol.</p>
+
+  <ol class="steps">
+    <li><div><strong>Navigate to Charts</strong><p>Click <strong>Charts</strong> in the left sidebar.</p></div></li>
+    <li><div><strong>Enter a symbol</strong><p>Type a ticker symbol in the input field (e.g., <code>TSLA</code>) and select a timeframe from the dropdown (5m, 1h, 1d, 1w).</p></div></li>
+    <li><div><strong>Click Load</strong><p>The chart fetches historical bars from the active provider chain and renders a candlestick series. Green candles = close above open; red candles = close below open.</p></div></li>
+  </ol>
+
+  <div class="callout info">
+    <strong>Timeframe availability</strong>
+    Intraday timeframes (5m, 1h) require a premium provider (Polygon.io, Finnhub, FMP, or TwelveData). Stooq and Yahoo Finance only support daily (1d) and above. If no intraday data is available, the chart shows an empty state.
+  </div>
+
+  <p>If no data has been loaded yet, the chart area displays <em>"No chart data. Enter a symbol and click Load."</em>. If a load is in progress, a loading spinner is shown instead.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ 8. WATCHLIST ═════════════════ -->
+<section id="watchlist">
+  <h2><span class="section-num">8</span> Watchlist</h2>
+  <p>The Watchlist lets you maintain a persistent list of symbols you always want scanned, regardless of the general filter criteria.</p>
+
+  <ol class="steps">
+    <li><div><strong>Navigate to Watchlist</strong><p>Click <strong>Watchlist</strong> in the left sidebar.</p></div></li>
+    <li><div><strong>Add a symbol</strong><p>Type a ticker in the input field and click <strong>Add</strong>. Duplicates are ignored silently.</p></div></li>
+    <li><div><strong>Remove a symbol</strong><p>Select a symbol in the list and click <strong>Remove</strong>, or use the delete button on the row.</p></div></li>
+  </ol>
+
+  <p>Watchlist symbols are included in every scan run. They bypass the minimum price, volume, and change-percent filters defined in Settings, so they always appear in results.</p>
+
+  <div class="callout info">
+    <strong>Persistence</strong>
+    Watchlist entries are stored in the local SQLite database and survive app restarts. They are device-specific (not synced across machines).
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════ 9. SETTINGS ══════════════════ -->
+<section id="settings">
+  <h2><span class="section-num">9</span> Settings</h2>
+
+  <h3 id="scan-settings">Scanner Settings</h3>
+  <table>
+    <tr><th>Setting</th><th>Description</th><th>Default</th></tr>
+    <tr><td><strong>Scan Frequency</strong></td><td>How often continuous scanning runs: Every1Minute, Every5Minutes, Every15Minutes, Every30Minutes, Hourly</td><td>Every5Minutes</td></tr>
+  </table>
+
+  <h3 id="filters">Filter Criteria</h3>
+  <p>Filters control which symbols are included in scan results. Watchlist symbols bypass these filters.</p>
+  <table>
+    <tr><th>Filter</th><th>Description</th><th>Default</th></tr>
+    <tr><td><strong>Min Price ($)</strong></td><td>Exclude symbols below this price. Use to filter out penny stocks.</td><td>$1.00</td></tr>
+    <tr><td><strong>Max Price ($)</strong></td><td>Exclude symbols above this price. Use to stay in a tradeable range.</td><td>$500.00</td></tr>
+    <tr><td><strong>Min Volume</strong></td><td>Exclude symbols with volume below this count. Use to ensure liquidity.</td><td>100,000</td></tr>
+    <tr><td><strong>Min Change %</strong></td><td>Exclude symbols with intraday change below this percent (absolute value).</td><td>1.0%</td></tr>
+    <tr><td><strong>Min Trade Score</strong></td><td>Slider 0–100. Only symbols scoring at or above this value appear in results.</td><td>50</td></tr>
+    <tr><td><strong>Max Results</strong></td><td>Maximum number of results to show per scan. Highest scores are kept.</td><td>50</td></tr>
+  </table>
+
+  <h3 id="weights">Score Weights</h3>
+  <p>Adjust how much each component contributes to the Trade Score. Weights are sliders that display the current percentage. Changes take effect on the next scan run.</p>
+
+  <div class="callout warning">
+    <strong>Weight sum</strong>
+    The four weights (Momentum, Volume, Technical, News) should sum to 1.0 (100%). The app does not enforce this — if they don't sum to 1.0, scores will be proportionally scaled. It is your responsibility to keep them balanced.
+  </div>
+
+  <h3>Notifications</h3>
+  <table>
+    <tr><th>Setting</th><th>Description</th></tr>
+    <tr><td><strong>Sound Alerts</strong></td><td>Play a system sound when an alert condition is met.</td></tr>
+    <tr><td><strong>Popup Alerts</strong></td><td>Show a popup notification when an alert condition is met.</td></tr>
+  </table>
+
+  <h3>Appearance</h3>
+  <p>The <strong>Theme</strong> dropdown allows switching between available themes. Currently <em>Dark</em> is the primary theme; additional themes may be added in future versions.</p>
+
+  <p>Click <strong>Save Settings</strong> to persist. Click <strong>Reset Defaults</strong> to revert all settings to factory values.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ 10. SECURITY ════════════════ -->
+<section id="security">
+  <h2><span class="section-num">10</span> Security &amp; Privacy</h2>
+
+  <h3>API Key Storage</h3>
+  <p>API keys are encrypted using <strong>Windows Data Protection API (DPAPI)</strong> before being stored in the local SQLite database. DPAPI binds encryption to your Windows user account and machine — the encrypted blob cannot be decrypted on another machine or under a different Windows account, even if someone copies the database file.</p>
+
+  <div class="callout info">
+    <strong>What this means in practice</strong>
+    If you reinstall Windows, restore your PC to factory settings, or move the database to another computer, saved API keys will not be recoverable. Re-enter them on the Providers page after re-installation.
+  </div>
+
+  <h3>Data Storage</h3>
+  <p>All application data is stored locally on your device at:</p>
+  <pre><code>%LOCALAPPDATA%\TradeScanner\
+  tradescanner.db       — SQLite database (scan history, watchlists, alerts, encrypted keys)
+  logs\                 — Application log files (Serilog, rotated daily)</code></pre>
+
+  <p>No data is transmitted to any server other than the market data providers you have configured. The application makes only outbound HTTP/WebSocket requests to provider APIs.</p>
+
+  <h3>Network Connections</h3>
+  <table>
+    <tr><th>Destination</th><th>Protocol</th><th>Purpose</th></tr>
+    <tr><td>api.polygon.io</td><td>HTTPS / WSS</td><td>Market data (if configured)</td></tr>
+    <tr><td>finnhub.io</td><td>HTTPS / WSS</td><td>Market data (if configured)</td></tr>
+    <tr><td>financialmodelingprep.com</td><td>HTTPS</td><td>Market data (if configured)</td></tr>
+    <tr><td>api.twelvedata.com</td><td>HTTPS</td><td>Market data (if configured)</td></tr>
+    <tr><td>www.alphavantage.co</td><td>HTTPS</td><td>Market data (if configured)</td></tr>
+    <tr><td>stooq.com</td><td>HTTPS</td><td>Free daily data</td></tr>
+    <tr><td>query1.finance.yahoo.com</td><td>HTTPS</td><td>Free quote data</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════ 11. TROUBLESHOOTING ══════════ -->
+<section id="troubleshooting">
+  <h2><span class="section-num">11</span> Troubleshooting</h2>
+
+  <h3>The app won't install (MSIX)</h3>
+  <div class="callout warning">
+    <strong>Most common cause</strong>
+    The signing certificate is not trusted. Run the certificate import command (see Installation, Step 2) from an elevated (Administrator) PowerShell session, then try installing again.
+  </div>
+
+  <h3>Scan returns no results</h3>
+  <ul>
+    <li>Check that the filter criteria in Settings are not too restrictive. Try lowering Min Trade Score to 0 and Min Change % to 0.</li>
+    <li>Verify that at least one provider is available (green dot on the Providers page). If all providers show grey, either no API keys are saved, or Yahoo Finance is failing — check your internet connection.</li>
+    <li>Check the status bar for any error message from the provider.</li>
+  </ul>
+
+  <h3>Streaming doesn't connect</h3>
+  <ul>
+    <li>Verify your Polygon.io or Finnhub key is saved on the Providers page (🔑 icon visible).</li>
+    <li>Premium WebSocket access may require a paid plan on the provider side. Finnhub's free tier supports WebSocket; Polygon.io requires at least a Starter plan.</li>
+    <li>Check for a firewall or VPN blocking outbound WSS connections to <code>socket.polygon.io</code> or <code>ws.finnhub.io</code>.</li>
+  </ul>
+
+  <h3>Charts show "No chart data"</h3>
+  <ul>
+    <li>Ensure you clicked <strong>Load</strong> after entering the symbol and timeframe.</li>
+    <li>If using a 5m or 1h timeframe, ensure a premium provider is configured — Stooq and Yahoo do not support intraday data.</li>
+    <li>Outside of US market hours (9:30 AM – 4:00 PM ET), intraday data for today may not yet be available.</li>
+  </ul>
+
+  <h3>API key shows "Invalid" after saving</h3>
+  <ul>
+    <li>Double-check that you copied the entire key with no leading/trailing spaces.</li>
+    <li>Some provider free tiers have daily request limits — the validate call may be failing due to rate limiting, not an invalid key.</li>
+    <li>If the key was saved from a different Windows account or PC, it will not decrypt correctly. Enter the key again.</li>
+  </ul>
+
+  <h3>Application logs</h3>
+  <p>Detailed logs are written to <code>%LOCALAPPDATA%\TradeScanner\logs\</code>, one file per day. These are plain text files useful for diagnosing errors. If reporting a bug, please include the relevant log file.</p>
+</section>
+
+<!-- ═══════════════════════════════════════════ 12. TECH REFERENCE ══════════ -->
+<section id="tech">
+  <h2><span class="section-num">12</span> Technical Reference</h2>
+
+  <h3>Technical Indicators Computed</h3>
+  <table>
+    <tr><th>Indicator</th><th>Usage</th></tr>
+    <tr><td><strong>RSI (14-period)</strong></td><td>Momentum score — sweet spot 50–70 = full 40 pts; overbought ≥ 70 = 20 pts</td></tr>
+    <tr><td><strong>SMA (20 &amp; 50 period)</strong></td><td>Trend confirmation in Technical score</td></tr>
+    <tr><td><strong>Bollinger Bands (20,2)</strong></td><td>Band position for Technical score</td></tr>
+    <tr><td><strong>ATR (14-period)</strong></td><td>Intraday range quality check in Technical score</td></tr>
+    <tr><td><strong>Volume Ratio</strong></td><td>Today's volume ÷ 20-day avg volume; drives Volume score</td></tr>
+    <tr><td><strong>Breakout Detection</strong></td><td>Close above highest high of prior N bars (configurable window)</td></tr>
+  </table>
+
+  <h3>Database Schema (SQLite)</h3>
+  <table>
+    <tr><th>Table</th><th>Contents</th></tr>
+    <tr><td><code>ScanResults</code></td><td>Historical scan records — all scored symbols per run</td></tr>
+    <tr><td><code>WatchlistEntries</code></td><td>User-defined watchlist symbols</td></tr>
+    <tr><td><code>AlertRules</code></td><td>User-defined alert conditions and trigger counts</td></tr>
+    <tr><td><code>ProviderConfigs</code></td><td>Encrypted API keys per provider</td></tr>
+    <tr><td><code>AppSettings</code></td><td>User preferences (scan frequency, filters, weights)</td></tr>
+    <tr><td><code>StockSymbols</code></td><td>Master symbol list</td></tr>
+  </table>
+
+  <h3>Technology Stack</h3>
+  <table>
+    <tr><th>Component</th><th>Technology</th><th>Version</th></tr>
+    <tr><td>Platform</td><td>.NET</td><td>10.0</td></tr>
+    <tr><td>UI Framework</td><td>WPF (Windows Presentation Foundation)</td><td>.NET 10</td></tr>
+    <tr><td>MVVM</td><td>CommunityToolkit.Mvvm</td><td>8.x</td></tr>
+    <tr><td>Database</td><td>SQLite via EF Core</td><td>EF 9.0</td></tr>
+    <tr><td>Charts</td><td>LiveCharts2</td><td>rc2</td></tr>
+    <tr><td>Resilience</td><td>Polly</td><td>8.x</td></tr>
+    <tr><td>Excel Export</td><td>ClosedXML</td><td>0.102.3</td></tr>
+    <tr><td>Logging</td><td>Serilog</td><td>4.x</td></tr>
+    <tr><td>DI Container</td><td>Microsoft.Extensions.DependencyInjection</td><td>10.0</td></tr>
+    <tr><td>Installer</td><td>MSIX</td><td>—</td></tr>
+  </table>
+</section>
+
+<footer>
+  <span>Day Trade Scanner Pro &mdash; User Guide v1.0</span>
+  <span>June 2026 &nbsp;&middot;&nbsp; &copy; Francisco Sencion</span>
+</footer>
+
+</body>
+</html>
