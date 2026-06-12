@@ -67,6 +67,56 @@ public static class DependencyInjection
     {
         using var scope = sp.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<TradeScannerDbContext>();
+
+        // If the database was previously created via EnsureCreated (which creates tables
+        // but does NOT record anything in __EFMigrationsHistory), MigrateAsync() will
+        // try to re-apply every migration and crash with "table already exists".
+        // Detect that state and backfill the migration record before migrating.
+        await BackfillMigrationHistoryIfNeededAsync(db);
+
         await db.Database.MigrateAsync();
+    }
+
+    private static async Task BackfillMigrationHistoryIfNeededAsync(TradeScannerDbContext db)
+    {
+        var conn = db.Database.GetDbConnection();
+        var opened = conn.State != System.Data.ConnectionState.Open;
+        if (opened) await conn.OpenAsync();
+        try
+        {
+            using var cmd = conn.CreateCommand();
+
+            // Ensure the migrations history table exists
+            cmd.CommandText = """
+                CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+                    "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
+                    "ProductVersion" TEXT NOT NULL
+                );
+                """;
+            await cmd.ExecuteNonQueryAsync();
+
+            // Check whether AppSettings already exists (tables were created without migration tracking)
+            cmd.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='AppSettings'";
+            var tablesExist = (long)(await cmd.ExecuteScalarAsync())! > 0;
+
+            // Check whether the InitialCreate migration is already recorded
+            cmd.CommandText = "SELECT COUNT(*) FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" = '20260611225422_InitialCreate'";
+            var alreadyRecorded = (long)(await cmd.ExecuteScalarAsync())! > 0;
+
+            // If tables are present but the migration isn't recorded, backfill it so
+            // MigrateAsync() treats this database as already at the baseline schema.
+            if (tablesExist && !alreadyRecorded)
+            {
+                cmd.CommandText = """
+                    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+                    VALUES ('20260611225422_InitialCreate', '9.0.0')
+                    """;
+                await cmd.ExecuteNonQueryAsync();
+            }
+        }
+        finally
+        {
+            if (opened) await conn.CloseAsync();
+        }
     }
 }
