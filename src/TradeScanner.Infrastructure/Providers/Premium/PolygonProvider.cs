@@ -23,7 +23,6 @@ public class PolygonProvider(IHttpClientFactory httpFactory, ILogger<PolygonProv
     {
         try
         {
-            var url = $"https://api.polygon.io/v2/last/trade/{symbol}?apiKey={_apiKey}";
             var snap = await _http.GetFromJsonAsync<PolygonSnapshotResponse>(
                 $"https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers/{symbol}?apiKey={_apiKey}", ct);
 
@@ -116,7 +115,8 @@ public class PolygonProvider(IHttpClientFactory httpFactory, ILogger<PolygonProv
     {
         try
         {
-            var resp = await _http.GetAsync($"https://api.polygon.io/v2/last/trade/AAPL?apiKey={_apiKey}", ct);
+            // /v2/last/trade was deprecated — use previous-day aggs which works on all plans
+            var resp = await _http.GetAsync($"https://api.polygon.io/v2/aggs/ticker/AAPL/prev?apiKey={_apiKey}", ct);
             return resp.IsSuccessStatusCode;
         }
         catch { return false; }
