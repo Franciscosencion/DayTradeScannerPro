@@ -404,6 +404,9 @@
     <li><a href="#security">Security &amp; Privacy</a></li>
     <li><a href="#troubleshooting">Troubleshooting</a></li>
     <li><a href="#tech">Technical Reference</a></li>
+    <li><a href="#market-testing">Market-Hours Testing Checklist</a>
+      <ul class="sub"><li><a href="#market-testing">Before open, At open, During hours, Known behaviors</a></li></ul>
+    </li>
   </ol>
 </div>
 
@@ -648,6 +651,16 @@
     <li>Yahoo Finance (priority 10, always available)</li>
   </ol>
   <p>If a provider returns an error or rate-limit response, the chain automatically retries with the next available provider. You do not need to configure this — it is automatic.</p>
+
+  <div class="callout warning">
+    <strong>Yahoo Finance symbol universe — important limitation</strong>
+    When Yahoo Finance is the only available provider (no API keys configured), the scanner operates on a <strong>fixed 30-symbol universe</strong>: AAPL, MSFT, NVDA, TSLA, META, AMZN, GOOGL, AMD, NFLX, CRM, PLTR, SOFI, RIVN, LCID, NIO, BABA, JD, SNAP, PINS, SPY, QQQ, IWM, DIA, GLD, SLV, USO, TLT, HYG, XLF. This is intentional — Yahoo Finance's public endpoint does not offer a "most active" list, so a curated day-trade universe is hardcoded. To scan the full market dynamically, add a premium API key (Polygon.io or Finnhub). The scan then requests up to 200 of the most active symbols from that provider's API.
+  </div>
+
+  <div class="callout info">
+    <strong>Scan pipeline flow</strong>
+    Each scan run: (1) requests up to 200 most-active symbols from the best available provider, (2) applies price / volume / change-percent filters, (3) fetches 50 bars of 5-minute historical data for up to 100 filtered candidates, (4) scores and ranks them, (5) returns the top N results (configured by Max Results). Only the top 100 candidates after filtering get their historical bars fetched — this keeps scan time reasonable on slower providers.
+  </div>
 </section>
 
 <!-- ═══════════════════════════════════════════ 5. DASHBOARD ══════════════════ -->
@@ -668,14 +681,15 @@
   <h3 id="results-table">Results Table Columns</h3>
   <table>
     <tr><th>Column</th><th>Description</th></tr>
-    <tr><td><strong>Symbol</strong></td><td>Ticker symbol (e.g., AAPL)</td></tr>
-    <tr><td><strong>Score</strong></td><td>Trade Score 0–100. Higher is a stronger setup. Color-coded: teal ≥ 70, amber 40–69, red &lt; 40.</td></tr>
-    <tr><td><strong>Price</strong></td><td>Last trade price. Updates live when streaming is active.</td></tr>
-    <tr><td><strong>Change %</strong></td><td>Intraday change from previous close. Green = positive, red = negative.</td></tr>
-    <tr><td><strong>Volume</strong></td><td>Volume traded today.</td></tr>
-    <tr><td><strong>Vol Ratio</strong></td><td>Today's volume ÷ average daily volume. Values above 2× indicate unusual activity.</td></tr>
-    <tr><td><strong>Provider</strong></td><td>Which data provider supplied this result.</td></tr>
-    <tr><td><strong>Time</strong></td><td>Timestamp of when this symbol was last scanned.</td></tr>
+    <tr><td><strong>SYMBOL</strong></td><td>Ticker symbol (e.g., AAPL). Highlighted in teal.</td></tr>
+    <tr><td><strong>SCORE</strong></td><td>Trade Score 0–100 in a color-coded badge: teal ≥ 75, amber 50–74, red &lt; 50.</td></tr>
+    <tr><td><strong>PRICE</strong></td><td>Last trade price ($). Updates live when streaming is active.</td></tr>
+    <tr><td><strong>CHANGE%</strong></td><td>Intraday change from previous close. Green = positive, red = negative.</td></tr>
+    <tr><td><strong>VOLUME</strong></td><td>Volume traded today (formatted with commas).</td></tr>
+    <tr><td><strong>VOL RATIO</strong></td><td>Today's volume ÷ 20-day average daily volume. 2.00× means double normal activity.</td></tr>
+    <tr><td><strong>MOMENTUM</strong></td><td>Momentum sub-score (0–100) — RSI position, intraday change direction and magnitude.</td></tr>
+    <tr><td><strong>TECHNICAL</strong></td><td>Technical sub-score (0–100) — Bollinger Band position, breakout, SMA trend, ATR.</td></tr>
+    <tr><td><strong>SIGNALS</strong></td><td>Comma-separated list of active signal tags for this symbol (e.g., breakout, high-volume). Truncated if too long.</td></tr>
   </table>
 
   <h3 id="trade-score">Understanding the Trade Score</h3>
@@ -799,9 +813,12 @@
 
   <ol class="steps">
     <li><div><strong>Navigate to Watchlist</strong><p>Click <strong>Watchlist</strong> in the left sidebar.</p></div></li>
-    <li><div><strong>Add a symbol</strong><p>Type a ticker in the input field and click <strong>Add</strong>. Duplicates are ignored silently.</p></div></li>
-    <li><div><strong>Remove a symbol</strong><p>Select a symbol in the list and click <strong>Remove</strong>, or use the delete button on the row.</p></div></li>
+    <li><div><strong>Add a symbol</strong><p>Type a ticker in the input field and press <strong>Enter</strong> or click <strong>Add to Watchlist</strong>. Duplicates are ignored silently.</p></div></li>
+    <li><div><strong>Refresh live quotes</strong><p>Click <strong>Refresh Quotes</strong> to pull the latest price, change %, and volume for every symbol on the list without running a full scan.</p></div></li>
+    <li><div><strong>Remove a symbol</strong><p>Click <strong>Remove</strong> on the right side of any row.</p></div></li>
   </ol>
+
+  <p>The watchlist table shows: <strong>Symbol</strong>, <strong>Price</strong>, <strong>Change%</strong> (green = positive, red = negative), <strong>Volume</strong>, and a Remove button per row.</p>
 
   <p>Watchlist symbols are included in every scan run. They bypass the minimum price, volume, and change-percent filters defined in Settings, so they always appear in results.</p>
 
@@ -818,8 +835,13 @@
   <h3 id="scan-settings">Scanner Settings</h3>
   <table>
     <tr><th>Setting</th><th>Description</th><th>Default</th></tr>
-    <tr><td><strong>Scan Frequency</strong></td><td>How often continuous scanning runs: Every1Minute, Every5Minutes, Every15Minutes, Every30Minutes, Hourly</td><td>Every5Minutes</td></tr>
+    <tr><td><strong>Scan Frequency</strong></td><td>How often continuous scanning runs. Options: RealTime (5 s poll), FiveSeconds, ThirtySeconds, OneMinute, FiveMinutes</td><td>OneMinute</td></tr>
   </table>
+
+  <div class="callout warning">
+    <strong>RealTime mode warning</strong>
+    Selecting <em>RealTime</em> polls the provider every 5 seconds. This will exhaust free-tier API rate limits within minutes. Only use RealTime mode with a premium provider (Polygon.io or Finnhub) that supports it. For all other providers, use OneMinute or FiveMinutes.
+  </div>
 
   <h3 id="filters">Filter Criteria</h3>
   <p>Filters control which symbols are included in scan results. Watchlist symbols bypass these filters.</p>
@@ -827,9 +849,9 @@
     <tr><th>Filter</th><th>Description</th><th>Default</th></tr>
     <tr><td><strong>Min Price ($)</strong></td><td>Exclude symbols below this price. Use to filter out penny stocks.</td><td>$1.00</td></tr>
     <tr><td><strong>Max Price ($)</strong></td><td>Exclude symbols above this price. Use to stay in a tradeable range.</td><td>$500.00</td></tr>
-    <tr><td><strong>Min Volume</strong></td><td>Exclude symbols with volume below this count. Use to ensure liquidity.</td><td>100,000</td></tr>
-    <tr><td><strong>Min Change %</strong></td><td>Exclude symbols with intraday change below this percent (absolute value).</td><td>1.0%</td></tr>
-    <tr><td><strong>Min Trade Score</strong></td><td>Slider 0–100. Only symbols scoring at or above this value appear in results.</td><td>50</td></tr>
+    <tr><td><strong>Min Volume</strong></td><td>Exclude symbols with volume below this count. Use to ensure liquidity.</td><td>500,000</td></tr>
+    <tr><td><strong>Min Change %</strong></td><td>Exclude symbols with intraday change below this percent (absolute value).</td><td>2.0%</td></tr>
+    <tr><td><strong>Min Trade Score</strong></td><td>Slider 0–100. Only symbols scoring at or above this value appear in results.</td><td>60</td></tr>
     <tr><td><strong>Max Results</strong></td><td>Maximum number of results to show per scan. Highest scores are kept.</td><td>50</td></tr>
   </table>
 
@@ -968,6 +990,48 @@
     <tr><td>Logging</td><td>Serilog</td><td>4.x</td></tr>
     <tr><td>DI Container</td><td>Microsoft.Extensions.DependencyInjection</td><td>10.0</td></tr>
     <tr><td>Installer</td><td>MSIX</td><td>—</td></tr>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════ 13. MARKET HOURS TESTING ═══ -->
+<section id="market-testing">
+  <h2><span class="section-num">13</span> Market-Hours Testing Checklist</h2>
+  <p>Use this checklist during your first live market-hours session to confirm all subsystems are working correctly. US market hours: 9:30 AM – 4:00 PM Eastern Time.</p>
+
+  <h3>Before Market Open (9:00–9:29 AM ET)</h3>
+  <ol class="steps">
+    <li><div><strong>Verify provider connectivity</strong><p>Navigate to <strong>Providers</strong>. Confirm at least one provider shows a green dot. Click <strong>Validate</strong> on your primary provider to confirm the API key is accepted.</p></div></li>
+    <li><div><strong>Check settings</strong><p>Go to <strong>Settings</strong> and confirm your filters are not too restrictive. For first-run testing, try: Min Price $5, Max Price $500, Min Volume 200,000, Min Change% 1.0, Min Score 40. Save settings.</p></div></li>
+    <li><div><strong>Add watchlist symbols</strong><p>Add 3–5 symbols you intend to monitor (e.g., AAPL, TSLA, NVDA) to the Watchlist. These will always appear in results regardless of filters.</p></div></li>
+    <li><div><strong>Confirm log file is being written</strong><p>Open <code>%LOCALAPPDATA%\TradeScanner\logs\</code> and verify a log file exists for today's date.</p></div></li>
+  </ol>
+
+  <h3>At Market Open (9:30 AM ET)</h3>
+  <ol class="steps">
+    <li><div><strong>Run a single scan</strong><p>Click <strong>Scan Once</strong> and wait for it to complete. Confirm results appear in the table. Check the status bar shows "Scan complete — N results" with no error text.</p></div></li>
+    <li><div><strong>Verify Trade Scores make sense</strong><p>At open, momentum and volume are typically elevated. Expect scores of 50–80 for active names. A table full of 0s or all 100s suggests a data mapping issue — check the provider's response in the logs.</p></div></li>
+    <li><div><strong>Test streaming (if you have a premium key)</strong><p>Select Polygon or Finnhub in the streaming dropdown, leave the key field blank (uses saved key), click <strong>Stream</strong>. Watch the PRICE column for live updates. Prices should change within seconds for active symbols like AAPL.</p></div></li>
+    <li><div><strong>Test an alert</strong><p>Go to <strong>Alerts</strong>. Add a Price Above alert for AAPL at $1 (guaranteed to fire). Run a scan. Confirm the system sound plays and the Triggered counter increments. Delete the test alert afterward.</p></div></li>
+  </ol>
+
+  <h3>During Market Hours</h3>
+  <ol class="steps">
+    <li><div><strong>Start continuous scanning</strong><p>Click <strong>Start Scan</strong>. Confirm the status bar cycles through "Fetching symbols… → Scanning N symbols… → Ranking N candidates… → Scan complete — N results" on each interval.</p></div></li>
+    <li><div><strong>Monitor for rate-limit errors</strong><p>If the status bar shows provider errors or results drop to 0 unexpectedly, you may have hit an API rate limit. The failover chain will switch providers automatically. Check the logs to confirm which provider is being used.</p></div></li>
+    <li><div><strong>Test export</strong><p>Click <strong>Export CSV</strong>, choose Excel format, save the file, open it in Excel. Confirm the Trade Score column is color-coded and the Change% column shows green/red formatting.</p></div></li>
+    <li><div><strong>Test streaming reconnect</strong><p>With streaming active, temporarily disable your network adapter for 5 seconds, then re-enable it. The status bar should show "Connection lost — reconnecting in 2s (attempt 1)…" then "reconnected" within 10–15 seconds. No manual action required.</p></div></li>
+    <li><div><strong>View a chart</strong><p>Navigate to <strong>Charts</strong>, enter a symbol, select <em>5m</em> timeframe, click Load. Confirm the candlestick chart renders with today's bars.</p></div></li>
+  </ol>
+
+  <h3>Known Behaviors (Not Bugs)</h3>
+  <table>
+    <tr><th>Behavior</th><th>Explanation</th></tr>
+    <tr><td>Scan takes 30–90 seconds</td><td>The scanner fetches up to 200 quotes then 50 bars × 100 symbols sequentially. This is expected, especially on slower free providers.</td></tr>
+    <tr><td>Yahoo Finance shows the same 30 symbols every scan</td><td>Yahoo does not offer a most-active API. The 30-symbol hardcoded universe is by design. Add a Polygon or Finnhub key for dynamic symbol discovery.</td></tr>
+    <tr><td>Chart shows no data for 5m/1h before 9:30 AM ET</td><td>Intraday bars don't exist before market open. Use 1d timeframe for pre-market context.</td></tr>
+    <tr><td>Results vanish then reappear on each scan</td><td>The results table is rebuilt on each scan completion. With streaming active, prices update in place without clearing the table.</td></tr>
+    <tr><td>Status bar shows "Scan complete — 0 results"</td><td>All candidates were filtered out. Temporarily lower Min Trade Score to 0 in Settings to see if symbols are reaching the ranking stage. If still 0, check provider connectivity.</td></tr>
+    <tr><td>ChangePercent shows 0.00% for some symbols</td><td>Some providers return 0 for the previous close before market data is fully populated (typically the first 1–2 minutes after open). Subsequent scans will have correct values.</td></tr>
   </table>
 </section>
 

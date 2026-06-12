@@ -141,6 +141,8 @@ Each sub-score is 0–100 and weights are user-configurable in Settings.
 
 The app uses a **FailoverProviderChain** — if the primary provider fails, it automatically falls back to the next available one.
 
+> **Yahoo Finance limitation:** When no API keys are configured, the scanner uses Yahoo Finance's free endpoint which operates on a hardcoded 30-symbol universe (AAPL, MSFT, NVDA, TSLA, META, SPY, QQQ, and similar). Yahoo does not offer a public "most active" API. Premium providers (Polygon.io, Finnhub) unlock dynamic discovery of up to 200 most-active symbols per scan.
+
 ---
 
 ## API Key Setup
