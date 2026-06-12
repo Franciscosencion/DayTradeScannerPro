@@ -188,9 +188,11 @@ public sealed class PolygonWebSocketClient(ILogger<PolygonWebSocketClient> logge
             if (text.Contains($"\"status\":\"{expectedStatus}\"", StringComparison.Ordinal))
                 return;
 
-            // auth_failed → throw
+            // auth_failed → throw with a clear plan-requirement message
             if (text.Contains("\"auth_failed\"", StringComparison.Ordinal))
-                throw new InvalidOperationException("Polygon authentication failed — check your API key");
+                throw new InvalidOperationException(
+                    "Polygon WebSocket auth failed. WebSocket streaming requires a Polygon Developer plan ($79/mo). " +
+                    "Your key is valid for REST scans. For free WebSocket streaming, switch the provider to Finnhub.");
         }
     }
 
