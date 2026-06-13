@@ -58,7 +58,7 @@ public partial class App : System.Windows.Application
                 services.AddTransient<ProvidersView>();
                 services.AddTransient<ChartsView>();
 
-                services.AddTransient<DashboardViewModel>();
+                services.AddSingleton<DashboardViewModel>();
                 services.AddTransient<WatchlistViewModel>();
                 services.AddTransient<AlertsViewModel>();
                 services.AddTransient<SettingsViewModel>();

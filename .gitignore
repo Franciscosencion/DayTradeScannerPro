@@ -9,9 +9,8 @@
 bin/
 obj/
 
-## Publish / MSIX staging
-src/publish/staging/
-src/publish/layout/
+## Publish / MSIX build artifacts — commit only the script, not the output
+src/publish/
 
 ## NuGet
 *.nupkg

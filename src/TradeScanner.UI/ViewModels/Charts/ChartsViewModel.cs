@@ -1,14 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using LiveChartsCore;
-using LiveChartsCore.Defaults;
-using LiveChartsCore.SkiaSharpView;
-using LiveChartsCore.SkiaSharpView.Painting;
-using SkiaSharp;
 using TradeScanner.Core.Interfaces;
 using TradeScanner.UI.Infrastructure;
-using WpfApp = System.Windows.Application;
-// rc2 uses FinancialPoint(date, high, open, close, low) for candlestick data
 
 namespace TradeScanner.UI.ViewModels.Charts;
 
@@ -22,9 +15,10 @@ public partial class ChartsViewModel : ViewModelBase
     [ObservableProperty] private string _volumeText = "—";
     [ObservableProperty] private string _dayRange = "—";
     [ObservableProperty] private bool _isPositive = true;
-    [ObservableProperty] private ISeries[] _series = [];
-    [ObservableProperty] private Axis[] _xAxes = [new Axis { IsVisible = false }];
-    [ObservableProperty] private Axis[] _yAxes = [new Axis { IsVisible = false }];
+
+    // Wired by ChartsView code-behind so ViewModel can drive WebView2 navigation
+    // without taking a dependency on UI controls.
+    public Action<string>? NavigateChart { get; set; }
 
     public ChartsViewModel(IProviderFactory providerFactory)
     {
@@ -44,13 +38,7 @@ public partial class ChartsViewModel : ViewModelBase
         try
         {
             var provider = _providerFactory.GetBestAvailableProvider();
-
-            var quoteTask = provider.GetQuoteAsync(sym);
-            var historyTask = provider.GetHistoricalBarsAsync(sym, "5m", 100);
-            await Task.WhenAll(quoteTask, historyTask);
-
-            var quote = quoteTask.Result;
-            var bars = historyTask.Result;
+            var quote = await provider.GetQuoteAsync(sym);
 
             if (quote != null)
             {
@@ -61,59 +49,8 @@ public partial class ChartsViewModel : ViewModelBase
                 IsPositive = quote.ChangePercent >= 0;
             }
 
-            if (bars.Count > 0)
-            {
-                // FinancialPoint ctor: (DateTime date, double? high, double? open, double? close, double? low)
-                var candles = bars.Select(b =>
-                    new FinancialPoint(b.Timestamp,
-                        (double)b.High, (double)b.Open, (double)b.Close, (double)b.Low))
-                    .ToArray();
-
-                WpfApp.Current.Dispatcher.Invoke(() =>
-                {
-                    Series =
-                    [
-                        new CandlesticksSeries<FinancialPoint>
-                        {
-                            Values = candles,
-                            Name = sym,
-                            UpFill   = new SolidColorPaint(new SKColor(0x26, 0xA6, 0x9A)),
-                            UpStroke = new SolidColorPaint(new SKColor(0x26, 0xA6, 0x9A)) { StrokeThickness = 1 },
-                            DownFill   = new SolidColorPaint(new SKColor(0xEF, 0x53, 0x50)),
-                            DownStroke = new SolidColorPaint(new SKColor(0xEF, 0x53, 0x50)) { StrokeThickness = 1 },
-                        }
-                    ];
-
-                    XAxes =
-                    [
-                        new Axis
-                        {
-                            // FinancialPoint uses DateTime ticks for X; convert back to readable time
-                            Labeler = v => new DateTime((long)v).ToString("HH:mm"),
-                            LabelsRotation = 45,
-                            UnitWidth = TimeSpan.FromMinutes(5).Ticks,
-                            SeparatorsPaint = new SolidColorPaint(new SKColor(50, 50, 50)),
-                            LabelsPaint = new SolidColorPaint(new SKColor(170, 170, 170)),
-                        }
-                    ];
-
-                    YAxes =
-                    [
-                        new Axis
-                        {
-                            Labeler = v => $"${v:F2}",
-                            SeparatorsPaint = new SolidColorPaint(new SKColor(50, 50, 50)),
-                            LabelsPaint = new SolidColorPaint(new SKColor(170, 170, 170)),
-                        }
-                    ];
-                });
-
-                StatusMessage = $"{bars.Count} bars loaded — {provider.DisplayName}";
-            }
-            else
-            {
-                StatusMessage = $"No chart data for {sym}";
-            }
+            NavigateChart?.Invoke(sym);
+            StatusMessage = $"{sym} · TradingView 5-min · VWAP + Volume";
         }
         catch (Exception ex)
         {

@@ -97,9 +97,17 @@ public class AlphaVantageProvider(IHttpClientFactory httpFactory, ILogger<AlphaV
         {
             var resp = await _http.GetFromJsonAsync<AvTopMoversResponse>(
                 $"{BaseUrl}?function=TOP_GAINERS_LOSERS&apikey={_apiKey}", ct);
-            if (resp?.MostActivelyTraded?.Count > 0)
-                return resp.MostActivelyTraded.Take(count)
-                    .Select(t => t.Ticker ?? "").Where(s => s.Length > 0).ToList();
+            if (resp != null)
+            {
+                // Merge most_actively_traded + top_gainers from the same single API call
+                var symbols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var t in resp.MostActivelyTraded ?? [])
+                    if (!string.IsNullOrEmpty(t.Ticker)) symbols.Add(t.Ticker);
+                foreach (var t in resp.TopGainers ?? [])
+                    if (!string.IsNullOrEmpty(t.Ticker)) symbols.Add(t.Ticker);
+                if (symbols.Count > 0)
+                    return symbols.Take(count).ToList();
+            }
         }
         catch { }
 
@@ -143,6 +151,7 @@ public class AlphaVantageProvider(IHttpClientFactory httpFactory, ILogger<AlphaV
         [property: JsonPropertyName("09. change")] string? Change,
         [property: JsonPropertyName("10. change percent")] string? ChangePercent);
     private record AvTopMoversResponse(
+        [property: JsonPropertyName("top_gainers")] List<AvTicker>? TopGainers,
         [property: JsonPropertyName("most_actively_traded")] List<AvTicker>? MostActivelyTraded);
     private record AvTicker([property: JsonPropertyName("ticker")] string? Ticker);
 }

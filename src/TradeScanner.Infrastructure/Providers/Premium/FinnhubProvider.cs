@@ -10,6 +10,7 @@ namespace TradeScanner.Infrastructure.Providers.Premium;
 public class FinnhubProvider(IHttpClientFactory httpFactory, ILogger<FinnhubProvider> logger) : IMarketDataProvider, INewsProvider
 {
     private readonly HttpClient _http = httpFactory.CreateClient("Finnhub");
+    private readonly SemaphoreSlim _throttle = new(20, 20); // limit concurrent quote calls
     private string _apiKey = string.Empty;
     private const string BaseUrl = "https://finnhub.io/api/v1";
 
@@ -43,7 +44,12 @@ public class FinnhubProvider(IHttpClientFactory httpFactory, ILogger<FinnhubProv
 
     public async Task<IReadOnlyList<Quote>> GetQuotesAsync(IEnumerable<string> symbols, CancellationToken ct = default)
     {
-        var tasks = symbols.Select(s => GetQuoteAsync(s, ct));
+        var tasks = symbols.Select(async s =>
+        {
+            await _throttle.WaitAsync(ct);
+            try { return await GetQuoteAsync(s, ct); }
+            finally { _throttle.Release(); }
+        });
         var results = await Task.WhenAll(tasks);
         return results.Where(q => q != null).Cast<Quote>().ToList();
     }
@@ -71,9 +77,33 @@ public class FinnhubProvider(IHttpClientFactory httpFactory, ILogger<FinnhubProv
 
     public async Task<IReadOnlyList<string>> GetMostActiveSymbolsAsync(int count = 100, CancellationToken ct = default)
     {
-        // Finnhub doesn't have a "most active" endpoint; return common day-trade universe
-        return await Task.FromResult<IReadOnlyList<string>>(
-            ["AAPL", "TSLA", "NVDA", "AMD", "MSFT", "META", "AMZN", "GOOGL", "SPY", "QQQ"]);
+        // Finnhub has no "most active" endpoint — return expanded hardcoded day-trading universe
+        IReadOnlyList<string> universe =
+        [
+            // Mega-cap tech
+            "AAPL","MSFT","NVDA","AMZN","GOOGL","META","TSLA","AVGO","ORCL","NFLX",
+            // Large-cap tech / semiconductors
+            "AMD","CRM","ADBE","INTC","QCOM","MU","AMAT","MRVL","TXN","KLAC",
+            // Financials
+            "JPM","BAC","V","MA","GS","MS","AXP","WFC","C","SCHW",
+            // Healthcare
+            "UNH","JNJ","LLY","PFE","ABBV","MRK","AMGN","BMY","GILD","CVS",
+            // Consumer / retail
+            "WMT","COST","HD","TGT","NKE","SBUX","MCD","LOW","CMG","TJX",
+            // Energy
+            "XOM","CVX","COP","OXY","SLB",
+            // High-liquidity ETFs
+            "SPY","QQQ","IWM","DIA","GLD","TLT","XLF","XLE","SQQQ","TQQQ",
+            // High-beta / popular day-trade names
+            "PLTR","SOFI","RIVN","LCID","NIO","BABA","COIN","HOOD","MARA","RIOT",
+            // Growth / fintech / cloud
+            "UPST","RBLX","UBER","SQ","PYPL","NET","DDOG","CRWD","ZS","SNOW",
+            // Additional active names
+            "SNAP","PINS","JD","AFRM","LYFT","SHOP","ABNB","OKTA","TSM","ARKK",
+            // International / sector
+            "BIDU","HUBS","BILL","PATH","MNDY",
+        ];
+        return await Task.FromResult(universe.Take(count).ToList());
     }
 
     public async Task<bool> ValidateApiKeyAsync(CancellationToken ct = default)

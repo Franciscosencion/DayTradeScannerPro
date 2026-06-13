@@ -12,6 +12,7 @@ public enum MarketDataProvider
 
     // Free
     YahooFinance,
+    YahooFinanceScreener,
     AlphaVantage,
     Stooq
 }

@@ -30,13 +30,24 @@ public static class DependencyInjection
 
         services.AddResilientHttpClient("Polygon");
         services.AddResilientHttpClient("Finnhub");
-        services.AddResilientHttpClient("Yahoo");
+        // Yahoo screener — no auth, browser User-Agent only
+        services.AddResilientHttpClient("YahooScreener")
+            .ConfigureHttpClient(c =>
+            {
+                c.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent",
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36");
+                c.DefaultRequestHeaders.TryAddWithoutValidation("Accept", "application/json,text/plain,*/*");
+                c.DefaultRequestHeaders.TryAddWithoutValidation("Accept-Language", "en-US,en;q=0.9");
+                c.DefaultRequestHeaders.TryAddWithoutValidation("Referer", "https://finance.yahoo.com/");
+            });
+        // Yahoo Finance crumb provider creates its own HttpClient with CookieContainer
         services.AddResilientHttpClient("AlphaVantage");
         services.AddResilientHttpClient("FMP");
         services.AddResilientHttpClient("TwelveData");
         services.AddResilientHttpClient("Stooq");
 
         services.AddSingleton<PolygonProvider>();
+        services.AddSingleton<YahooScreenerProvider>();
         services.AddSingleton<FinnhubProvider>();
         services.AddSingleton<FmpProvider>();
         services.AddSingleton<TwelveDataProvider>();
@@ -47,6 +58,7 @@ public static class DependencyInjection
         // Register each concrete provider also as IMarketDataProvider for IEnumerable<IMarketDataProvider> injection in ProviderFactory
         // Order matters: last registered = default single-instance resolution; FailoverChain registered last so ScannerService uses it
         services.AddSingleton<IMarketDataProvider>(sp => sp.GetRequiredService<PolygonProvider>());
+        services.AddSingleton<IMarketDataProvider>(sp => sp.GetRequiredService<YahooScreenerProvider>());
         services.AddSingleton<IMarketDataProvider>(sp => sp.GetRequiredService<FinnhubProvider>());
         services.AddSingleton<IMarketDataProvider>(sp => sp.GetRequiredService<FmpProvider>());
         services.AddSingleton<IMarketDataProvider>(sp => sp.GetRequiredService<TwelveDataProvider>());

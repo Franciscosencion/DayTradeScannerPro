@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Windows.Data;
 using Microsoft.Win32;
 using WpfApp = System.Windows.Application;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -21,15 +23,38 @@ public partial class DashboardViewModel : ViewModelBase
 
     [ObservableProperty] private bool _isScanning;
     [ObservableProperty] private bool _isStreaming;
+    [ObservableProperty] private bool _relaxedScanMode;
     [ObservableProperty] private string _scanStatus = "Ready";
     [ObservableProperty] private string _streamingApiKey = string.Empty;
     [ObservableProperty] private string _selectedStreamingProvider = "Polygon";
     [ObservableProperty] private int _resultCount;
     [ObservableProperty] private DateTime _lastScanTime;
     [ObservableProperty] private ScanResultViewModel? _selectedResult;
+    [ObservableProperty] private string _currentSortColumn = nameof(ScanResultViewModel.TradeScore);
+    [ObservableProperty] private bool _isSortAscending = false;
 
     public ObservableCollection<ScanResultViewModel> ScanResults { get; } = [];
+    public ICollectionView SortedResults { get; }
     public IReadOnlyList<string> StreamingProviders { get; } = ["Polygon", "Finnhub"];
+
+    // Wired by MainWindow so the Dashboard can trigger chart navigation without a UI dependency.
+    public Action<string>? NavigateToChart { get; set; }
+
+    [RelayCommand]
+    private void OpenChart(string symbol) => NavigateToChart?.Invoke(symbol);
+
+    // Column header labels — include ↑/↓ indicator on the active sort column
+    public string ColSymbol    => HeaderLabel(nameof(ScanResultViewModel.Symbol), "SYMBOL");
+    public string ColScore     => HeaderLabel(nameof(ScanResultViewModel.TradeScore), "SCORE");
+    public string ColPrice     => HeaderLabel(nameof(ScanResultViewModel.Price), "PRICE");
+    public string ColChange    => HeaderLabel(nameof(ScanResultViewModel.ChangePercent), "CHANGE%");
+    public string ColVolume    => HeaderLabel(nameof(ScanResultViewModel.Volume), "VOLUME");
+    public string ColVolRatio  => HeaderLabel(nameof(ScanResultViewModel.VolumeRatio), "VOL RATIO");
+    public string ColMomentum  => HeaderLabel(nameof(ScanResultViewModel.MomentumScore), "MOMENTUM");
+    public string ColTechnical => HeaderLabel(nameof(ScanResultViewModel.TechnicalScore), "TECHNICAL");
+
+    private string HeaderLabel(string col, string label) =>
+        col == CurrentSortColumn ? $"{label} {(IsSortAscending ? "↑" : "↓")}" : label;
 
     public DashboardViewModel(
         IScannerService scanner,
@@ -44,12 +69,53 @@ public partial class DashboardViewModel : ViewModelBase
         _exportService = exportService;
         _configService = configService;
 
+        SortedResults = CollectionViewSource.GetDefaultView(ScanResults);
+        SortedResults.SortDescriptions.Add(
+            new SortDescription(nameof(ScanResultViewModel.TradeScore), ListSortDirection.Descending));
+
         _scanner.ScanCompleted += OnScanCompleted;
         _scanner.StatusChanged += OnStatusChanged;
         _scanner.ScanError += OnScanError;
 
         _streaming.TradeReceived += OnTradeReceived;
         _streaming.StatusChanged += OnStreamingStatusChanged;
+    }
+
+    [RelayCommand]
+    private void ToggleRelaxedMode() => RelaxedScanMode = !RelaxedScanMode;
+
+    partial void OnRelaxedScanModeChanged(bool value) => _scanner.RelaxedScanMode = value;
+
+    partial void OnCurrentSortColumnChanged(string value) => NotifyHeadersChanged();
+    partial void OnIsSortAscendingChanged(bool value) => NotifyHeadersChanged();
+
+    private void NotifyHeadersChanged()
+    {
+        OnPropertyChanged(nameof(ColSymbol));
+        OnPropertyChanged(nameof(ColScore));
+        OnPropertyChanged(nameof(ColPrice));
+        OnPropertyChanged(nameof(ColChange));
+        OnPropertyChanged(nameof(ColVolume));
+        OnPropertyChanged(nameof(ColVolRatio));
+        OnPropertyChanged(nameof(ColMomentum));
+        OnPropertyChanged(nameof(ColTechnical));
+    }
+
+    [RelayCommand]
+    private void SortBy(string column)
+    {
+        if (column == CurrentSortColumn)
+            IsSortAscending = !IsSortAscending;
+        else
+        {
+            CurrentSortColumn = column;
+            // Symbol sorts ascending by default; all numeric columns sort descending
+            IsSortAscending = column == nameof(ScanResultViewModel.Symbol);
+        }
+
+        SortedResults.SortDescriptions.Clear();
+        SortedResults.SortDescriptions.Add(new SortDescription(
+            column, IsSortAscending ? ListSortDirection.Ascending : ListSortDirection.Descending));
     }
 
     [RelayCommand]

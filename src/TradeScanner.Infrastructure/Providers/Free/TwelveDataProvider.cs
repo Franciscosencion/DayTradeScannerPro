@@ -75,9 +75,14 @@ public class TwelveDataProvider(IHttpClientFactory httpFactory, ILogger<TwelveDa
 
     public async Task<IReadOnlyList<string>> GetMostActiveSymbolsAsync(int count = 100, CancellationToken ct = default) =>
         await Task.FromResult<IReadOnlyList<string>>(
-        ["AAPL","MSFT","NVDA","TSLA","META","AMZN","GOOGL","AMD","NFLX","CRM",
-         "PLTR","SOFI","RIVN","NIO","BABA","JD","SNAP","PINS","SPY","QQQ",
-         "IWM","DIA","GLD","SLV","USO","TLT","XLF","ARKK","SQQQ","TQQQ"]);
+        [
+            "AAPL","MSFT","NVDA","TSLA","META","AMZN","GOOGL","AMD","NFLX","CRM",
+            "PLTR","SOFI","RIVN","NIO","BABA","JD","SNAP","PINS","SPY","QQQ",
+            "IWM","DIA","GLD","SLV","USO","TLT","XLF","ARKK","SQQQ","TQQQ",
+            "JPM","BAC","V","MA","GS","AVGO","ORCL","ADBE","INTC","QCOM",
+            "XOM","CVX","UNH","JNJ","WMT","COST","COIN","HOOD","MARA","RIOT",
+            "UPST","UBER","SQ","PYPL","CRWD","NET","DDOG","ZS","SHOP","ABNB",
+        ]);
 
     public async Task<bool> ValidateApiKeyAsync(CancellationToken ct = default)
     {

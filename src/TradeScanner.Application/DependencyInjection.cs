@@ -17,8 +17,13 @@ public static class DependencyInjection
         services.AddSingleton<RankingEngine>();
         services.AddSingleton<IRankingEngine>(sp => sp.GetRequiredService<RankingEngine>());
 
-        // ScannerService is singleton; it uses IServiceScopeFactory internally to create scoped repos per scan
-        services.AddSingleton<ScannerService>();
+        // ScannerService is singleton. Explicitly wire FailoverProviderChain as its IMarketDataProvider
+        // so it uses the full priority chain instead of the last-registered bare provider.
+        services.AddSingleton<ScannerService>(sp => new ScannerService(
+            sp.GetRequiredService<FailoverProviderChain>(),
+            sp.GetRequiredService<IRankingEngine>(),
+            sp.GetRequiredService<IServiceScopeFactory>(),
+            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ScannerService>>()));
         services.AddSingleton<IScannerService>(sp => sp.GetRequiredService<ScannerService>());
 
         services.AddScoped<AlertService>();

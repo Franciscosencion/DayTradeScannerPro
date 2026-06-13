@@ -11,13 +11,14 @@ public class PolygonProvider(IHttpClientFactory httpFactory, ILogger<PolygonProv
 {
     private readonly HttpClient _http = httpFactory.CreateClient("Polygon");
     private string _apiKey = string.Empty;
+    private bool _plan403; // free plan — snapshot endpoints require paid plan
 
     public MarketDataProvider ProviderType => MarketDataProvider.PolygonIo;
     public string DisplayName => "Polygon.io";
-    public bool IsAvailable => !string.IsNullOrEmpty(_apiKey);
+    public bool IsAvailable => !string.IsNullOrEmpty(_apiKey) && !_plan403;
     public int Priority => 1;
 
-    public void SetApiKey(string apiKey) => _apiKey = apiKey;
+    public void SetApiKey(string apiKey) { _apiKey = apiKey; _plan403 = false; }
 
     public async Task<Quote?> GetQuoteAsync(string symbol, CancellationToken ct = default)
     {
@@ -49,12 +50,19 @@ public class PolygonProvider(IHttpClientFactory httpFactory, ILogger<PolygonProv
 
     public async Task<IReadOnlyList<Quote>> GetQuotesAsync(IEnumerable<string> symbols, CancellationToken ct = default)
     {
+        if (_plan403) return [];
         var tickers = string.Join(",", symbols);
         try
         {
-            var snap = await _http.GetFromJsonAsync<PolygonSnapshotsResponse>(
+            var resp = await _http.GetAsync(
                 $"https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/tickers?tickers={tickers}&apiKey={_apiKey}", ct);
-
+            if (resp.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                _plan403 = true;
+                logger.LogWarning("Polygon.io returned 403 — snapshot endpoints require a paid plan. Marking Polygon unavailable for this session");
+                return [];
+            }
+            var snap = await resp.Content.ReadFromJsonAsync<PolygonSnapshotsResponse>(cancellationToken: ct);
             return snap?.Tickers?.Select(t => new Quote(
                 t.Ticker ?? string.Empty,
                 (decimal)(t.Day?.C ?? 0),
@@ -102,11 +110,19 @@ public class PolygonProvider(IHttpClientFactory httpFactory, ILogger<PolygonProv
 
     public async Task<IReadOnlyList<string>> GetMostActiveSymbolsAsync(int count = 100, CancellationToken ct = default)
     {
+        if (_plan403) return [];
         try
         {
-            var resp = await _http.GetFromJsonAsync<PolygonSnapshotsResponse>(
+            var resp = await _http.GetAsync(
                 $"https://api.polygon.io/v2/snapshot/locale/us/markets/stocks/gainers?apiKey={_apiKey}", ct);
-            return resp?.Tickers?.Take(count).Select(t => t.Ticker ?? "").Where(s => s.Length > 0).ToList() ?? [];
+            if (resp.StatusCode == System.Net.HttpStatusCode.Forbidden)
+            {
+                _plan403 = true;
+                logger.LogWarning("Polygon.io returned 403 on gainers — snapshot endpoints require a paid plan");
+                return [];
+            }
+            var data = await resp.Content.ReadFromJsonAsync<PolygonSnapshotsResponse>(cancellationToken: ct);
+            return data?.Tickers?.Take(count).Select(t => t.Ticker ?? "").Where(s => s.Length > 0).ToList() ?? [];
         }
         catch { return []; }
     }

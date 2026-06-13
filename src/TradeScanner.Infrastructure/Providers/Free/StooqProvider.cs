@@ -44,9 +44,17 @@ public class StooqProvider(IHttpClientFactory httpFactory, ILogger<StooqProvider
             prevClose, latest.Volume, changePct, change, latest.Timestamp);
     }
 
+    // Stooq rate-limits burst requests — cap at 5 concurrent
+    private static readonly SemaphoreSlim _throttle = new(5, 5);
+
     public async Task<IReadOnlyList<Quote>> GetQuotesAsync(IEnumerable<string> symbols, CancellationToken ct = default)
     {
-        var tasks = symbols.Select(s => GetQuoteAsync(s, ct));
+        var tasks = symbols.Select(async s =>
+        {
+            await _throttle.WaitAsync(ct);
+            try { return await GetQuoteAsync(s, ct); }
+            finally { _throttle.Release(); }
+        });
         var results = await Task.WhenAll(tasks);
         return results.Where(q => q != null).Cast<Quote>().ToList();
     }

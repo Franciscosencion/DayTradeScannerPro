@@ -19,6 +19,7 @@ public class ScannerService(
     private AppSettings _settings = new();
 
     public bool IsRunning { get; private set; }
+    public bool RelaxedScanMode { get; set; }
     public event EventHandler<IReadOnlyList<ScanResult>>? ScanCompleted;
     public event EventHandler<string>? StatusChanged;
     public event EventHandler<Exception>? ScanError;
@@ -76,14 +77,16 @@ public class ScannerService(
         StatusChanged?.Invoke(this, "Fetching symbols...");
 
         var symbols = await provider.GetMostActiveSymbolsAsync(200, ct);
-        StatusChanged?.Invoke(this, $"Scanning {symbols.Count} symbols...");
+        StatusChanged?.Invoke(this, RelaxedScanMode
+            ? $"Scanning {symbols.Count} symbols (Relaxed Mode — all filters bypassed)..."
+            : $"Scanning {symbols.Count} symbols...");
 
         var quotes = await provider.GetQuotesAsync(symbols, ct);
 
         var filtered = quotes
             .Where(q => q.Price >= _settings.MinPrice && q.Price <= _settings.MaxPrice)
-            .Where(q => Math.Abs(q.ChangePercent) >= _settings.MinChangePercent)
-            .Where(q => q.Volume >= _settings.MinVolume)
+            .Where(q => RelaxedScanMode || Math.Abs(q.ChangePercent) >= _settings.MinChangePercent)
+            .Where(q => RelaxedScanMode || q.Volume >= _settings.MinVolume)
             .ToList();
 
         StatusChanged?.Invoke(this, $"Ranking {filtered.Count} candidates...");
@@ -95,7 +98,7 @@ public class ScannerService(
             var history = await provider.GetHistoricalBarsAsync(quote.Symbol, "5m", 50, ct);
             var score = rankingEngine.CalculateScore(quote, history, []);
 
-            if (score.Score < _settings.MinTradeScore) continue;
+            if (!RelaxedScanMode && score.Score < _settings.MinTradeScore) continue;
 
             results.Add(new ScanResult
             {
@@ -123,7 +126,17 @@ public class ScannerService(
         var resultRepo = scope.ServiceProvider.GetRequiredService<ScanResultRepository>();
         await resultRepo.SaveResultsAsync(ranked, ct);
 
-        StatusChanged?.Invoke(this, $"Scan complete — {ranked.Count} results");
+        if (ranked.Count == 0)
+        {
+            var hint = RelaxedScanMode
+                ? "No data returned — configure a free API key in the Providers tab (Finnhub/Alpha Vantage/TwelveData)"
+                : "0 results — enable Relaxed Mode to bypass filters, or configure a free API key in Providers";
+            StatusChanged?.Invoke(this, hint);
+        }
+        else
+        {
+            StatusChanged?.Invoke(this, $"Scan complete — {ranked.Count} results");
+        }
         logger.LogInformation("Scan completed: {Count} results", ranked.Count);
 
         return ranked;

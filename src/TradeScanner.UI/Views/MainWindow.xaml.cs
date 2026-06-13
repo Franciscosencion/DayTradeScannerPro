@@ -1,5 +1,7 @@
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
+using TradeScanner.UI.ViewModels.Charts;
+using TradeScanner.UI.ViewModels.Dashboard;
 using TradeScanner.UI.Views.Alerts;
 using TradeScanner.UI.Views.Charts;
 using TradeScanner.UI.Views.Dashboard;
@@ -18,6 +20,18 @@ public partial class MainWindow : Window
         InitializeComponent();
         _services = services;
         Loaded += (_, _) => NavigateToDashboard();
+
+        // DashboardViewModel is singleton — wire once so symbol clicks navigate to Charts.
+        var dashVm = services.GetRequiredService<DashboardViewModel>();
+        dashVm.NavigateToChart = NavigateToChartView;
+    }
+
+    private void NavigateToChartView(string symbol)
+    {
+        var chartsView = _services.GetRequiredService<ChartsView>();
+        if (chartsView.DataContext is ChartsViewModel chartsVm)
+            chartsVm.Symbol = symbol;
+        MainFrame.Navigate(chartsView);
     }
 
     private void NavigateToDashboard() =>

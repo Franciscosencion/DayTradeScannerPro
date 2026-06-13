@@ -14,11 +14,14 @@ A commercial-grade Windows desktop stock scanner built with C#/.NET 10, WPF, and
 - **Automated market scanning** — continuous or single-shot scans with configurable frequency
 - **Trade Score 0–100** — composite ranking: Momentum (35%), Volume (30%), Technical (25%), News (10%)
 - **Technical indicators** — RSI, SMA, Bollinger Bands, ATR, breakout detection
-- **7 data providers** — Polygon.io, Finnhub, FMP, TwelveData, AlphaVantage, Stooq, Yahoo Finance with automatic failover
+- **8 data providers** — Polygon.io, Finnhub, FMP, TwelveData, AlphaVantage, Stooq, Yahoo Finance, Yahoo Screener with automatic failover
+- **179-symbol scan universe** — all providers run in parallel; their symbol lists are merged and deduplicated each scan
 - **Real-time WebSocket streaming** — live trade ticks from Polygon.io and Finnhub with exponential-backoff reconnect
 - **Price/volume/percent-change alerts** — sound + popup notifications
 - **Watchlist** — persist and monitor custom symbol lists
-- **Interactive charts** — candlestick charts with LiveCharts2
+- **TradingView Advanced Charts** — 5-min candlesticks with VWAP, Volume, drawing tools, and timeframe selector embedded via WebView2 (no key required)
+- **Clickable symbols** — click any symbol in the Dashboard to instantly open its TradingView chart
+- **Resizable columns** — drag any Dashboard column header to resize; click to sort
 - **Export** — formatted `.xlsx` (ClosedXML, color-coded) and `.csv`
 - **DPAPI-encrypted API keys** — keys stored in SQLite, never plaintext
 - **MSIX installer** — self-contained 72 MB package, Windows 10 1809+
@@ -129,19 +132,22 @@ Each sub-score is 0–100 and weights are user-configurable in Settings.
 
 ## Data Providers
 
-| Provider | Tier | Key Required | Streaming |
-|---|---|---|---|
-| Polygon.io | Premium | Yes | Yes (WebSocket) |
-| Finnhub | Premium | Yes | Yes (WebSocket) |
-| Financial Modeling Prep | Premium | Yes | No |
-| TwelveData | Premium | Yes | No |
-| AlphaVantage | Free tier | Yes | No |
-| Stooq | Free | No | No (daily only) |
-| Yahoo Finance | Free | No | No |
+| Provider | Tier | Key Required | Streaming | Symbol Discovery |
+|---|---|---|---|---|
+| Polygon.io | Premium | Yes | Yes (WebSocket) | Most-active snapshot (paid plan) |
+| Yahoo Screener | Free | No | No | ~97 symbols: most-active + day-gainers |
+| Finnhub | Premium | Yes | Yes (WebSocket) | 105-symbol curated high-volume list |
+| Financial Modeling Prep | Premium | Yes | No | Most-active endpoint |
+| TwelveData | Premium | Yes | No | 60-symbol curated list |
+| AlphaVantage | Free tier | Yes | No | Top gainers + most-active traded |
+| Stooq | Free | No | No (daily only) | Fallback quotes only |
+| Yahoo Finance | Free | No | No | Fallback quotes only |
 
-The app uses a **FailoverProviderChain** — if the primary provider fails, it automatically falls back to the next available one.
+The app uses a **FailoverProviderChain** that runs all providers **in parallel** on each scan. Symbol lists are merged and deduplicated into a single universe (~179 symbols when multiple providers are active). Quote fetching uses the highest-priority available provider with automatic failover.
 
-> **Yahoo Finance limitation:** When no API keys are configured, the scanner uses Yahoo Finance's free endpoint which operates on a hardcoded 30-symbol universe (AAPL, MSFT, NVDA, TSLA, META, SPY, QQQ, and similar). Yahoo does not offer a public "most active" API. Premium providers (Polygon.io, Finnhub) unlock dynamic discovery of up to 200 most-active symbols per scan.
+**Symbol universe without API keys:** The Yahoo Screener provider fetches Yahoo Finance's `most_actives` and `day_gainers` screeners (two parallel HTTP calls, no key required) giving ~97 real-time market leaders. Combined with Finnhub's 105-symbol curated list, the scanner evaluates ~179 unique symbols per scan entirely for free.
+
+**Polygon.io free plan:** The snapshot endpoint returns 403 on the free tier. The app detects this on the first failure and disables Polygon for the remainder of the session, so no retries occur.
 
 ---
 
@@ -154,6 +160,51 @@ The app uses a **FailoverProviderChain** — if the primary provider fails, it a
 5. Click **Validate** at any time to test connectivity.
 
 Keys are per-user, per-machine. They cannot be extracted without the Windows account that saved them.
+
+---
+
+## Using the Dashboard
+
+The Dashboard is the main scanner view.
+
+| Control | Action |
+|---|---|
+| **Start Scanning** | Begin continuous scans at the configured interval |
+| **Scan Once** | Run a single scan immediately |
+| **Relaxed Mode** | Lowers MinChange%, MinVolume, and MinScore thresholds — useful in slow markets |
+| **Stream** | Connect a WebSocket feed (Polygon or Finnhub) to stream live prices into existing results |
+| **Export CSV** | Save current results as `.xlsx` or `.csv` |
+
+### Results table
+
+- **Click any symbol** (e.g. `NOK`) to jump directly to its TradingView chart.
+- **Click a column header** to sort by that column; click again to reverse.
+- **Drag the right edge of any column header** to resize that column.
+
+Columns in the results table:
+
+| Column | Description |
+|---|---|
+| SYMBOL | Ticker — click to open chart |
+| SCORE | Trade Score 0–100 (green ≥ 70, amber 40–69, red < 40) |
+| PRICE | Last traded price |
+| CHANGE% | Day change vs. previous close |
+| VOLUME | Shares traded today |
+| VOL RATIO | Today's volume ÷ average volume (high = unusual activity) |
+| MOMENTUM | Momentum sub-score 0–100 |
+| TECHNICAL | Technical sub-score 0–100 (RSI, Bollinger, breakout) |
+| SIGNALS | Active signal tags (e.g. `VOLUME_SURGE`, `RSI_OVERSOLD`) |
+
+---
+
+## Charts
+
+The Charts tab embeds a full **TradingView Advanced Chart** (5-minute candlesticks, Volume and VWAP indicators, drawing tools, multiple timeframes).
+
+- **From the Dashboard:** click any symbol to navigate directly to its chart.
+- **Manually:** type a symbol in the box and press **Enter** or click **Load Chart**.
+- The stats bar (Price, Change, Vol, Range) populates after clicking Load Chart.
+- The chart is interactive — you can change symbol, timeframe, and add indicators directly in the chart widget.
 
 ---
 
@@ -173,7 +224,7 @@ TradeScanner/
 │   │   └── Interfaces/          All service contracts
 │   ├── TradeScanner.Infrastructure/
 │   │   ├── Data/                TradeScannerDbContext, EF migrations
-│   │   ├── Providers/           7 provider implementations + FailoverProviderChain
+│   │   ├── Providers/           8 provider implementations + FailoverProviderChain
 │   │   ├── Repositories/        AlertRepository, WatchlistRepository, ScanResultRepository, ProviderConfigRepository
 │   │   ├── Security/            DpapiSecurityService
 │   │   └── Streaming/           PolygonWebSocketClient, FinnhubWebSocketClient
