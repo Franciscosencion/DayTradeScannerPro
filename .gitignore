@@ -11,6 +11,7 @@ obj/
 
 ## Publish / MSIX build artifacts — commit only the script, not the output
 src/publish/
+publish/
 
 ## NuGet
 *.nupkg
